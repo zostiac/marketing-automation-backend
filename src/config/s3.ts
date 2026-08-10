@@ -7,6 +7,7 @@ const s3Config: S3ClientConfig = {
 
 if (config.bucket_endpoint && config.bucket_endpoint.trim() !== '') {
   s3Config.endpoint = config.bucket_endpoint.trim();
+  s3Config.forcePathStyle = true;
 }
 
 if (config.bucket_access_key && config.bucket_secret_key) {

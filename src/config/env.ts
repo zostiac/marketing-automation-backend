@@ -11,15 +11,37 @@ export const config = {
     process.env.REDIS_PUBLIC_URL ||
     process.env.REDIS_PRIVATE_URL ||
     '',
-  bucket_name: process.env.BUCKET_NAME || '',
+  bucket_name:
+    process.env.BUCKET_NAME ||
+    process.env.AWS_BUCKET ||
+    process.env.S3_BUCKET ||
+    process.env.TIGRIS_BUCKET ||
+    'school-marketing-assets',
   bucket_region:
     process.env.BUCKET_REGION ||
     process.env.AWS_REGION ||
     process.env.AWS_DEFAULT_REGION ||
+    process.env.S3_REGION ||
     'us-east-1',
-  bucket_endpoint: process.env.BUCKET_ENDPOINT || '',
-  bucket_access_key: process.env.BUCKET_ACCESS_KEY || process.env.AWS_ACCESS_KEY_ID || '',
-  bucket_secret_key: process.env.BUCKET_SECRET_KEY || process.env.AWS_SECRET_ACCESS_KEY || '',
+  bucket_endpoint:
+    process.env.BUCKET_ENDPOINT ||
+    process.env.AWS_ENDPOINT_URL_S3 ||
+    process.env.AWS_ENDPOINT ||
+    process.env.S3_ENDPOINT ||
+    process.env.S3_ENDPOINT_URL ||
+    '',
+  bucket_access_key:
+    process.env.BUCKET_ACCESS_KEY ||
+    process.env.AWS_ACCESS_KEY_ID ||
+    process.env.S3_ACCESS_KEY_ID ||
+    process.env.S3_KEY_ID ||
+    '',
+  bucket_secret_key:
+    process.env.BUCKET_SECRET_KEY ||
+    process.env.AWS_SECRET_ACCESS_KEY ||
+    process.env.S3_SECRET_ACCESS_KEY ||
+    process.env.S3_SECRET_KEY ||
+    '',
   openai_api_key: process.env.OPENAI_API_KEY || '',
   image_generation_provider: process.env.IMAGE_GENERATION_PROVIDER || 'openai',
   max_retries: parseInt(process.env.MAX_RETRIES || '3', 10),
@@ -34,7 +56,6 @@ if (process.env.NODE_ENV !== 'test') {
   const missing: string[] = [];
   if (!config.database_url) missing.push('DATABASE_URL (or DATABASE_PUBLIC_URL / DATABASE_PRIVATE_URL)');
   if (!config.redis_url) missing.push('REDIS_URL (or REDIS_PUBLIC_URL / REDIS_PRIVATE_URL)');
-  if (!config.bucket_name) missing.push('BUCKET_NAME');
   if (!config.openai_api_key) missing.push('OPENAI_API_KEY');
 
   if (missing.length > 0) {
