@@ -1,13 +1,18 @@
 import Queue from 'bull';
-import { redis } from '../config/redis';
 import { JobProcessor } from '../services/JobProcessor';
 import { config } from '../config/env';
 
-export const designQueue = new Queue('design', {
+const redisUrl = config.redis_url || 'redis://127.0.0.1:6379';
+
+export const designQueue = new Queue('design', redisUrl, {
   redis: {
-    port: new URL(config.redis_url).port ? parseInt(new URL(config.redis_url).port) : 6379,
-    host: new URL(config.redis_url).hostname,
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
   },
+});
+
+designQueue.on('error', (err) => {
+  console.error('Bull design queue Redis error:', err);
 });
 
 designQueue.process(1, async (job) => {

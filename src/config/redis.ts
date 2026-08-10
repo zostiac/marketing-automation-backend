@@ -1,15 +1,33 @@
 import { createClient } from 'redis';
 import { config } from './env';
 
+const redisUrl = config.redis_url || 'redis://127.0.0.1:6379';
+
 const redis = createClient({
-  url: config.redis_url,
+  url: redisUrl,
+  socket: {
+    reconnectStrategy: (retries) => {
+      if (retries > 10) {
+        console.error('Redis reconnection attempts exceeded');
+        return new Error('Redis reconnection failed');
+      }
+      return Math.min(retries * 500, 3000);
+    },
+  },
 });
 
-redis.on('error', (err) => console.error('Redis Client Error', err));
+redis.on('error', (err) => console.error('Redis Client Error:', err));
 
 export async function initializeRedis() {
-  await redis.connect();
-  console.log('Redis connected');
+  try {
+    if (!redis.isOpen) {
+      await redis.connect();
+      console.log('Redis connected successfully');
+    }
+  } catch (error) {
+    console.error('Redis connection failed:', error);
+    throw error;
+  }
 }
 
 export { redis };
