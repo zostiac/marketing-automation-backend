@@ -1,50 +1,27 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 export const config = {
-  // Server
-  port: parseInt(process.env.PORT || '3000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
-
-  // Database
-  databaseUrl: process.env.DATABASE_URL || '',
-
-  // Redis
-  redisUrl: process.env.REDIS_URL || '',
-
-  // AWS/S3
-  awsRegion: process.env.AWS_REGION || 'us-east-1',
-  awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-  awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  bucketName: process.env.BUCKET_NAME || '',
-
-  // AI Providers
-  openaiApiKey: process.env.OPENAI_API_KEY || '',
-  stableDiffusionUrl: process.env.STABLE_DIFFUSION_URL || '',
-  midjourneyApiKey: process.env.MIDJOURNEY_API_KEY || '',
-
-  // Security
-  jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  apiKey: process.env.API_KEY || '',
-
-  // Feature flags
-  enableAiGeneration: process.env.ENABLE_AI_GENERATION === 'true',
-  enableAutoPublish: process.env.ENABLE_AUTO_PUBLISH === 'true',
-  logLevel: process.env.LOG_LEVEL || 'info',
+  node_env: process.env.NODE_ENV || 'development',
+  port: parseInt(process.env.PORT || '3000'),
+  database_url: process.env.DATABASE_URL || '',
+  redis_url: process.env.REDIS_URL || '',
+  bucket_name: process.env.BUCKET_NAME || '',
+  bucket_region: process.env.BUCKET_REGION || '',
+  bucket_endpoint: process.env.BUCKET_ENDPOINT || '',
+  bucket_access_key: process.env.BUCKET_ACCESS_KEY || '',
+  bucket_secret_key: process.env.BUCKET_SECRET_KEY || '',
+  openai_api_key: process.env.OPENAI_API_KEY || '',
+  image_generation_provider: process.env.IMAGE_GENERATION_PROVIDER || 'openai',
+  max_retries: parseInt(process.env.MAX_RETRIES || '3'),
+  job_timeout_ms: parseInt(process.env.JOB_TIMEOUT_MS || '300000'),
+  quality_check_enabled: process.env.QUALITY_CHECK_ENABLED === 'true',
+  log_level: process.env.LOG_LEVEL || 'info',
+  scheduled_check_time: process.env.SCHEDULED_EVENTS_CHECK_TIME || '08:00',
 };
 
-// Validate required config
-function validateConfig() {
-  const required = ['databaseUrl', 'redisUrl', 'bucketName', 'openaiApiKey'];
+// Validate required config on startup
+if (process.env.NODE_ENV !== 'test') {
+  const required = ['database_url', 'redis_url', 'bucket_name', 'openai_api_key'];
   const missing = required.filter(key => !config[key as keyof typeof config]);
-
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
-}
-
-if (process.env.NODE_ENV !== 'test') {
-  validateConfig();
 }

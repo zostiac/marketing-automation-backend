@@ -1,46 +1,46 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
-
-import { initializeDatabase } from './database/connection';
+import { initializeDatabase } from './config/database';
 import { initializeRedis } from './config/redis';
-import { startScheduledTasks } from './queues/scheduledTasks';
-import { logger } from './utils/logger';
-import { errorHandler } from './middleware/errorHandler';
-import { requestLogger } from './middleware/requestLogger';
+import { config } from './config/env';
 import routes from './routes';
-
-dotenv.config();
+import { startScheduledTasks } from './queues/scheduledTasks';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
 app.use(morgan('combined'));
-app.use(requestLogger);
+app.use(express.json());
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
 
 app.use('/api', routes);
 
-app.use(errorHandler);
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 async function bootstrap() {
   try {
     await initializeDatabase();
-    logger.info('Database initialized');
+    console.log('✓ Database connected');
 
     await initializeRedis();
-    logger.info('Redis connected');
+    console.log('✓ Redis connected');
 
     startScheduledTasks();
-    logger.info('Scheduled tasks started');
+    console.log('✓ Scheduled tasks started');
 
-    app.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
+    app.listen(config.port, () => {
+      console.log(`✓ Server running on port ${config.port}`);
     });
   } catch (error) {
-    logger.error('Bootstrap failed:', error);
+    console.error('Bootstrap error:', error);
     process.exit(1);
   }
 }
@@ -48,6 +48,6 @@ async function bootstrap() {
 bootstrap();
 
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+  console.log('SIGTERM received');
   process.exit(0);
 });
