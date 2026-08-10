@@ -1,37 +1,53 @@
-import "dotenv/config";
-import express from "express";
-import cors from "cors";
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
+
+import { initializeDatabase } from './database/connection';
+import { initializeRedis } from './config/redis';
+import { startScheduledTasks } from './queues/scheduledTasks';
+import { logger } from './utils/logger';
+import { errorHandler } from './middleware/errorHandler';
+import { requestLogger } from './middleware/requestLogger';
+import routes from './routes';
+
+dotenv.config();
 
 const app = express();
-const PORT = parseInt(process.env.PORT || "3000", 10);
+const PORT = process.env.PORT || 3000;
 
-// ── Middleware ────────────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
+app.use(cors());
 app.use(express.json());
+app.use(morgan('combined'));
+app.use(requestLogger);
 
-// ── Routes ───────────────────────────────────────────────────────────────────
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+app.use('/api', routes);
 
-// ── Start ────────────────────────────────────────────────────────────────────
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} [${process.env.NODE_ENV || "development"}]`);
-});
+app.use(errorHandler);
 
-// ── Graceful Shutdown ────────────────────────────────────────────────────────
-const shutdown = (signal: string) => {
-  console.log(`\n${signal} received — shutting down gracefully...`);
-  server.close(() => {
-    console.log("Server closed");
-    process.exit(0);
-  });
-  // Force exit after 10s if graceful shutdown hangs
-  setTimeout(() => {
-    console.error("Forced shutdown after timeout");
+async function bootstrap() {
+  try {
+    await initializeDatabase();
+    logger.info('Database initialized');
+
+    await initializeRedis();
+    logger.info('Redis connected');
+
+    startScheduledTasks();
+    logger.info('Scheduled tasks started');
+
+    app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Bootstrap failed:', error);
     process.exit(1);
-  }, 10_000);
-};
+  }
+}
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+bootstrap();
+
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
