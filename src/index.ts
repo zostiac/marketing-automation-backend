@@ -14,19 +14,26 @@ app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
 
+// Health check endpoint for Railway / load balancers
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
 app.use('/api', routes);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err);
+  console.error('Unhandled request error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
 async function bootstrap() {
   try {
+    console.log('Starting application bootstrap...');
+
     await initializeDatabase();
     console.log('✓ Database connected');
 
@@ -36,8 +43,8 @@ async function bootstrap() {
     startScheduledTasks();
     console.log('✓ Scheduled tasks started');
 
-    app.listen(config.port, () => {
-      console.log(`✓ Server running on port ${config.port}`);
+    app.listen(config.port, '0.0.0.0', () => {
+      console.log(`✓ Server running on port ${config.port} (0.0.0.0:${config.port})`);
     });
   } catch (error) {
     console.error('Bootstrap error:', error);
@@ -48,6 +55,11 @@ async function bootstrap() {
 bootstrap();
 
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received');
+  console.log('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
   process.exit(0);
 });

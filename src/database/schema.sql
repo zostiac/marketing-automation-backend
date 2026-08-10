@@ -1,5 +1,8 @@
+-- Enable pgcrypto extension for gen_random_uuid support
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- Schools table
-CREATE TABLE schools (
+CREATE TABLE IF NOT EXISTS schools (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   tagline VARCHAR(255),
@@ -16,7 +19,7 @@ CREATE TABLE schools (
 );
 
 -- Events table
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   school_id UUID NOT NULL REFERENCES schools(id),
   name VARCHAR(255) NOT NULL,
@@ -33,7 +36,7 @@ CREATE TABLE events (
 );
 
 -- Design requests table
-CREATE TABLE design_requests (
+CREATE TABLE IF NOT EXISTS design_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   school_id UUID NOT NULL REFERENCES schools(id),
   event_id UUID REFERENCES events(id),
@@ -44,7 +47,7 @@ CREATE TABLE design_requests (
 );
 
 -- Creative directions table
-CREATE TABLE creative_directions (
+CREATE TABLE IF NOT EXISTS creative_directions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   design_request_id UUID NOT NULL REFERENCES design_requests(id),
   concept TEXT,
@@ -62,7 +65,7 @@ CREATE TABLE creative_directions (
 );
 
 -- Design jobs table
-CREATE TABLE design_jobs (
+CREATE TABLE IF NOT EXISTS design_jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   design_request_id UUID NOT NULL REFERENCES design_requests(id),
   status VARCHAR(50) DEFAULT 'QUEUED',
@@ -77,7 +80,7 @@ CREATE TABLE design_jobs (
 );
 
 -- Assets table
-CREATE TABLE assets (
+CREATE TABLE IF NOT EXISTS assets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   design_job_id UUID NOT NULL REFERENCES design_jobs(id),
   event_id UUID REFERENCES events(id),
@@ -94,7 +97,7 @@ CREATE TABLE assets (
 );
 
 -- Generation history table
-CREATE TABLE generation_history (
+CREATE TABLE IF NOT EXISTS generation_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id UUID REFERENCES events(id),
   design_type VARCHAR(50),
@@ -107,7 +110,7 @@ CREATE TABLE generation_history (
 );
 
 -- System logs table
-CREATE TABLE system_logs (
+CREATE TABLE IF NOT EXISTS system_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   level VARCHAR(20),
   service VARCHAR(100),
@@ -117,11 +120,11 @@ CREATE TABLE system_logs (
 );
 
 -- Indexes for common queries
-CREATE INDEX idx_events_school_id ON events(school_id);
-CREATE INDEX idx_events_date ON events(event_date);
-CREATE INDEX idx_design_requests_school_id ON design_requests(school_id);
-CREATE INDEX idx_design_requests_event_id ON design_requests(event_id);
-CREATE INDEX idx_design_jobs_status ON design_jobs(status);
-CREATE INDEX idx_assets_event_id ON assets(event_id);
-CREATE INDEX idx_generation_history_event_id ON generation_history(event_id);
-CREATE INDEX idx_system_logs_created_at ON system_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_events_school_id ON events(school_id);
+CREATE INDEX IF NOT EXISTS idx_events_date ON events(event_date);
+CREATE INDEX IF NOT EXISTS idx_design_requests_school_id ON design_requests(school_id);
+CREATE INDEX IF NOT EXISTS idx_design_requests_event_id ON design_requests(event_id);
+CREATE INDEX IF NOT EXISTS idx_design_jobs_status ON design_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_assets_event_id ON assets(event_id);
+CREATE INDEX IF NOT EXISTS idx_generation_history_event_id ON generation_history(event_id);
+CREATE INDEX IF NOT EXISTS idx_system_logs_created_at ON system_logs(created_at);

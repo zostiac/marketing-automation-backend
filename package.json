@@ -4,7 +4,7 @@
   "description": "AI-powered school marketing automation backend for Amar English School",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && (cp -r src/database/schema.sql dist/database/schema.sql 2>/dev/null || true)",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "migrate": "ts-node src/database/migrations.ts",
