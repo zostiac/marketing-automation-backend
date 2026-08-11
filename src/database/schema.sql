@@ -18,6 +18,25 @@ CREATE TABLE IF NOT EXISTS schools (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS school_admins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL REFERENCES schools(id),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS school_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL REFERENCES schools(id),
+  plan VARCHAR(50) DEFAULT 'free',
+  monthly_design_limit INTEGER DEFAULT 10,
+  design_count INTEGER DEFAULT 0,
+  billing_date TIMESTAMP,
+  next_reset_date TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(school_id)
+);
+
 -- Events table
 CREATE TABLE IF NOT EXISTS events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -101,16 +120,14 @@ CREATE TABLE IF NOT EXISTS content_calendar (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
   event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  scheduled_publish_date DATE NOT NULL,
-  platforms JSONB NOT NULL DEFAULT '[]'::jsonb,
-  status VARCHAR(20) NOT NULL DEFAULT 'draft'
-    CHECK (status IN ('draft', 'scheduled', 'published')),
+  scheduled_publish_date TIMESTAMP NOT NULL,
+  platforms JSONB,
+  status VARCHAR(50) DEFAULT 'draft',
   caption TEXT,
-  hashtags JSONB NOT NULL DEFAULT '[]'::jsonb,
+  hashtags JSONB,
+  published_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CHECK (jsonb_typeof(platforms) = 'array'),
-  CHECK (jsonb_typeof(hashtags) = 'array')
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Generation history table
@@ -143,8 +160,8 @@ CREATE INDEX IF NOT EXISTS idx_design_requests_school_id ON design_requests(scho
 CREATE INDEX IF NOT EXISTS idx_design_requests_event_id ON design_requests(event_id);
 CREATE INDEX IF NOT EXISTS idx_design_jobs_status ON design_jobs(status);
 CREATE INDEX IF NOT EXISTS idx_assets_event_id ON assets(event_id);
-CREATE INDEX IF NOT EXISTS idx_content_calendar_school_date
-  ON content_calendar(school_id, scheduled_publish_date);
-CREATE INDEX IF NOT EXISTS idx_content_calendar_event_id ON content_calendar(event_id);
+CREATE INDEX IF NOT EXISTS idx_content_calendar_school_id ON content_calendar(school_id);
+CREATE INDEX IF NOT EXISTS idx_content_calendar_scheduled_publish_date
+  ON content_calendar(scheduled_publish_date);
 CREATE INDEX IF NOT EXISTS idx_generation_history_event_id ON generation_history(event_id);
 CREATE INDEX IF NOT EXISTS idx_system_logs_created_at ON system_logs(created_at);
