@@ -14,10 +14,11 @@ export interface NepalFestivalDefinition {
 
 /**
  * Festival dates that depend on the lunar calendar must be updated every
- * Bikram Sambat year. The 2083 entries are based on the Government of Nepal,
- * Ministry of Home Affairs public-holiday notice for 2083 BS, published on
- * 2082/11/18, with individual Dashain and Tihar observances included so that
- * schools can plan culturally relevant content.
+ * Bikram Sambat year. The 2083 public-holiday entries are based on the
+ * Government of Nepal, Ministry of Home Affairs notice for 2083 BS, published
+ * on 2082/11/18. Additional source-checked cultural occasions and individual
+ * Dashain and Tihar observances are included so schools can plan relevant
+ * content. This file is curated data; it is not populated by runtime scraping.
  */
 export const NEPAL_FESTIVALS: ReadonlyArray<NepalFestivalDefinition> = [
   {
@@ -40,6 +41,17 @@ export const NEPAL_FESTIVALS: ReadonlyArray<NepalFestivalDefinition> = [
       "Buddha Jayanti, Chandi Purnima and the Kirat festival of Ubhauli.",
     scope: "national",
     is_public_holiday: true,
+  },
+  {
+    bs_year: 2083,
+    bs_month: 5,
+    bs_day: 1,
+    name: "Nag Panchami",
+    name_nepali: "नाग पञ्चमी",
+    description:
+      "A festival honouring serpent deities and praying for protection and wellbeing.",
+    scope: "national",
+    is_public_holiday: false,
   },
   {
     bs_year: 2083,

@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc && (cp -r src/database/schema.sql dist/database/schema.sql 2>/dev/null || true)",
+    "test": "npm run build && node --test dist/services/NepaliCalendarProvider.test.js",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "migrate": "ts-node src/database/migrations.ts",
