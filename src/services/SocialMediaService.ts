@@ -3,7 +3,7 @@ import { AssetManager } from './AssetManager';
 import { config } from '../config/env';
 
 export interface SocialMediaPost {
-  platform: 'facebook' | 'instagram' | 'twitter';
+  platform: 'facebook' | 'instagram' | 'tiktok';
   caption: string;
   imageStorageKey: string;
   hashtags?: string[];
@@ -74,14 +74,65 @@ export class SocialMediaService {
     }
   }
 
-  // Twitter Publishing
-  static async publishToTwitter(post: SocialMediaPost): Promise<string> {
+  // TikTok Publishing (Content Posting API v2, direct photo post)
+  static async publishToTikTok(post: SocialMediaPost): Promise<string> {
     try {
-      // Requires Twitter API v2 with media upload capability
-      console.log('Twitter publishing would use Twitter API v2');
-      return 'twitter_post_id';
+      const imageBuffer = await AssetManager.retrieveAsset(
+        config.bucket_name,
+        post.imageStorageKey
+      );
+
+      // TikTok only accepts JPEG/WEBP for photo posts; our generated designs
+      // are PNG, so they must be converted before upload (e.g. via sharp).
+      if (post.imageStorageKey.toLowerCase().endsWith('.png')) {
+        console.warn(
+          'TikTok requires JPEG/WEBP photo posts; consider converting PNG asset:',
+          post.imageStorageKey
+        );
+      }
+
+      // Step 1: Initialize a direct photo post. Note: unaudited TikTok apps
+      // can only publish with privacy_level SELF_ONLY until audited.
+      const initResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/post/publish/content/init/',
+        {
+          media_type: 'PHOTO',
+          post_mode: 'DIRECT_POST',
+          post_info: {
+            title: post.caption,
+            privacy_level:
+              process.env.TIKTOK_PRIVACY_LEVEL || 'PUBLIC_TO_EVERYONE',
+          },
+          source_info: {
+            source: 'FILE_UPLOAD',
+            photo_size: imageBuffer.length,
+            chunk_size: imageBuffer.length,
+            total_chunk_count: 1,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.TIKTOK_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+        }
+      );
+
+      const { publish_id, upload_url } = initResponse.data.data;
+
+      // Step 2: Send the image binary to the returned upload URL
+      // (single-chunk upload per TikTok's media transfer guide).
+      await axios.put(upload_url, imageBuffer, {
+        headers: {
+          'Content-Type': 'image/jpeg',
+          'Content-Range': `bytes 0-${imageBuffer.length - 1}/${imageBuffer.length}`,
+        },
+      });
+
+      console.log('Posted to TikTok:', publish_id);
+      return publish_id;
     } catch (error) {
-      console.error('Twitter post error:', error);
+      console.error('TikTok post error:', error);
       throw error;
     }
   }
@@ -97,8 +148,8 @@ export class SocialMediaService {
       if (process.env.INSTAGRAM_ACCESS_TOKEN) {
         results.instagram = await this.publishToInstagram(post);
       }
-      if (process.env.TWITTER_ACCESS_TOKEN) {
-        results.twitter = await this.publishToTwitter(post);
+      if (process.env.TIKTOK_ACCESS_TOKEN) {
+        results.tiktok = await this.publishToTikTok(post);
       }
     } catch (error) {
       console.error('Social media publishing error:', error);
