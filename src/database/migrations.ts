@@ -207,6 +207,40 @@ export async function runMigrations() {
       }
     }
 
+    // Auto-seed canonical school (Amar English School) — idempotent by name
+    try {
+      const amarSchool = {
+        name: 'Amar English School',
+        tagline: 'Education is the Light of Life',
+        location: 'Devchuli-16, Rajahar, Nawalparasi',
+        official_logo_url: 'assets/logo.png',
+        brand_colors: JSON.stringify({ primary: '#0B4F8C', secondary: '#F2C94C', accent: '#FFFFFF' }),
+        typography: JSON.stringify({ heading: 'Modern Sans', body: 'Elegant Devanagari' }),
+        visual_style: 'modern, minimal, editorial, premium',
+        logo_protection_rules: JSON.stringify({ preserve_original: true, allow_reposition: true, allow_resize: true, allow_rotation: false, minimum_padding: 48, priority: 'high', blend_with_design: true, avoid_busy_background: true }),
+        design_preferences: JSON.stringify({ tone: 'professional, premium, modern and school-appropriate', imagery: 'occasion-appropriate custom illustrations, students, school environment and relevant cultural/educational visuals', composition: 'dynamic, strong visual hierarchy, balanced whitespace, asymmetrical where appropriate', visual_reference: 'Awwwards', avoid: 'generic AI style, clipart, excessive 3D, photorealism unless told to' }),
+        social_media_info: JSON.stringify({ facebook: 'https://www.facebook.com/amarrajahar16', tiktok: 'https://www.tiktok.com/@amarenglishschool?lang=en', instagram: 'https://www.instagram.com/amarrajahar/', youtube: 'https://www.youtube.com/@amarrajahar', website: null }),
+      };
+      const existing = await db.query('SELECT id FROM schools WHERE name = $1 LIMIT 1', [amarSchool.name]);
+      if (existing.rows.length === 0) {
+        await db.query(
+          `INSERT INTO schools (name, tagline, location, official_logo_url, brand_colors, typography, visual_style, logo_protection_rules, design_preferences, social_media_info)
+           VALUES ($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7,$8::jsonb,$9::jsonb,$10::jsonb)`,
+          [amarSchool.name, amarSchool.tagline, amarSchool.location, amarSchool.official_logo_url, amarSchool.brand_colors, amarSchool.typography, amarSchool.visual_style, amarSchool.logo_protection_rules, amarSchool.design_preferences, amarSchool.social_media_info]
+        );
+        console.log('✓ Seeded Amar English School');
+      } else {
+        // keep existing row updated with latest branding (non-destructive)
+        await db.query(
+          `UPDATE schools SET tagline=$2, location=$3, official_logo_url=$4, brand_colors=$5::jsonb, typography=$6::jsonb, visual_style=$7, logo_protection_rules=$8::jsonb, design_preferences=$9::jsonb, social_media_info=$10::jsonb, updated_at=CURRENT_TIMESTAMP WHERE name=$1`,
+          [amarSchool.name, amarSchool.tagline, amarSchool.location, amarSchool.official_logo_url, amarSchool.brand_colors, amarSchool.typography, amarSchool.visual_style, amarSchool.logo_protection_rules, amarSchool.design_preferences, amarSchool.social_media_info]
+        );
+        console.log('✓ Amar English School already exists — refreshed');
+      }
+    } catch (seedErr) {
+      console.warn('⚠ Amar school auto-seed skipped:', (seedErr as Error).message);
+    }
+
     console.log('✓ Database migrations completed successfully');
   } catch (error) {
     console.error('Migration failed:', error);
