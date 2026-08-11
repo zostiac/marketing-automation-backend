@@ -1,111 +1,92 @@
 import Link from 'next/link';
 import { ConnectionBanner } from '@/components/connection-banner';
-import { DesignBadge, OccasionBadge, RunBadge } from '@/components/status';
-import { Button, Card, CardHeader, EmptyState, StatTile } from '@/components/ui';
-import { isApiConfigured } from '@/lib/api';
-import { getDesigns, getOccasions, getRuns, getStats } from '@/lib/data';
+import { CalendarBadge, DesignJobBadge } from '@/components/status';
+import { Card, CardHeader, EmptyState, StatTile } from '@/components/ui';
+import { isApiConfigured, isSchoolConfigured } from '@/lib/api';
+import { getCalendar, getRecentJobs, getSystemStats } from '@/lib/data';
 import { formatDate, formatDateTime, relativeDays } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
+const linkButton =
+  'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700';
+
+function shortId(id: string): string {
+  return `${id.slice(0, 8)}…`;
+}
+
 export default async function DashboardPage() {
-  const [stats, occasions, designs, runs] = await Promise.all([
-    getStats(),
-    getOccasions(),
-    getDesigns(),
-    getRuns(),
+  const [stats, calendar, jobs] = await Promise.all([
+    getSystemStats(),
+    getCalendar(),
+    getRecentJobs(20),
   ]);
 
-  const live = stats.live && occasions.live;
+  const live = stats.live && calendar.live && jobs.live;
+  const error = [stats.error, calendar.error, jobs.error].filter(Boolean).join(' · ') || undefined;
   const now = new Date();
-
-  const upcoming = occasions.data
-    .filter((o) => o.status !== 'completed' && o.status !== 'skipped')
-    .sort((a, b) => +new Date(a.date) - +new Date(b.date))
+  const calendarEntries = [...calendar.data]
+    .sort(
+      (a, b) =>
+        +new Date(a.scheduled_publish_date) - +new Date(b.scheduled_publish_date),
+    )
     .slice(0, 5);
-
-  const recentDesigns = designs.data.slice(0, 4);
-  const needsApproval = designs.data.filter((d) => d.status === 'pending_approval').length;
-  const latestRuns = runs.data.slice(0, 4);
+  const recentJobs = [...jobs.data]
+    .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+    .slice(0, 5);
+  const approvedJobs = recentJobs.filter((job) => job.status.toUpperCase() === 'APPROVED').length;
+  const failedJobs = recentJobs.filter((job) => job.status.toUpperCase() === 'FAILED').length;
 
   return (
     <>
-      <ConnectionBanner live={live} error={occasions.error} configured={isApiConfigured()} />
+      <ConnectionBanner
+        live={live}
+        error={error}
+        configured={isApiConfigured()}
+        requiresSchool
+        schoolConfigured={isSchoolConfigured()}
+      />
 
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Dashboard</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Occasions detected, designs generated, and what went out the door.
+          Live system totals, this month&apos;s content calendar, and recent design jobs.
         </p>
       </div>
 
-      {/* Stats */}
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile
-          label="Upcoming"
-          value={stats.data.upcomingOccasions}
-          sublabel="occasions detected"
-          tone="blue"
-        />
-        <StatTile
-          label="Needs approval"
-          value={needsApproval || stats.data.pendingApproval}
-          sublabel="designs waiting"
-          tone={needsApproval > 0 ? 'violet' : 'neutral'}
-        />
-        <StatTile
-          label="Posters"
-          value={stats.data.postersThisMonth}
-          sublabel="this month"
-          tone="green"
-        />
-        <StatTile
-          label="Last email"
-          value={stats.data.lastEmailSentAt ? formatDate(stats.data.lastEmailSentAt) : '—'}
-          sublabel={stats.data.lastEmailSentAt ? relativeDays(stats.data.lastEmailSentAt, now) : 'never sent'}
-        />
+        <StatTile label="Schools" value={stats.data.schools} sublabel="registered" tone="blue" />
+        <StatTile label="Events" value={stats.data.events} sublabel="in the database" tone="violet" />
+        <StatTile label="Design jobs" value={stats.data.jobs} sublabel="all time" tone="amber" />
+        <StatTile label="Assets" value={stats.data.assets} sublabel="generated files" tone="green" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* Occasions */}
         <div className="lg:col-span-3">
           <Card>
             <CardHeader
-              title="Upcoming Occasions"
+              title="Content Calendar"
               icon={<span aria-hidden>📅</span>}
-              description="Auto-detected festivals and manually added campaigns"
-              action={
-                <Link href="/occasions">
-                  <Button>View all</Button>
-                </Link>
-              }
+              description="Entries returned by GET /api/calendar/:schoolId for this month"
+              action={<Link href="/calendar" className={linkButton}>View calendar</Link>}
             />
-            {upcoming.length === 0 ? (
-              <EmptyState message="No upcoming occasions." hint="The detector runs daily." />
+            {calendarEntries.length === 0 ? (
+              <EmptyState message="No calendar entries this month." hint="Create entries through the calendar API." />
             ) : (
               <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                {upcoming.map((o) => (
-                  <li
-                    key={o.id}
-                    className="flex items-center justify-between gap-4 px-5 py-3.5"
-                  >
+                {calendarEntries.map((entry) => (
+                  <li key={entry.id} className="flex items-center justify-between gap-4 px-5 py-3.5">
                     <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {o.name}
-                        </p>
-                        {o.nameNepali ? (
-                          <span className="text-xs text-slate-400 dark:text-slate-500">
-                            {o.nameNepali}
-                          </span>
-                        ) : null}
-                      </div>
+                      <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {entry.name || `Event ${shortId(entry.event_id)}`}
+                      </p>
                       <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                        {formatDate(o.date)} · {relativeDays(o.date, now)}
-                        {o.designCount > 0 ? ` · ${o.designCount} design${o.designCount > 1 ? 's' : ''}` : ''}
+                        {formatDate(entry.scheduled_publish_date)} ·{' '}
+                        {relativeDays(entry.scheduled_publish_date, now)}
+                        {entry.platforms.length ? ` · ${entry.platforms.join(', ')}` : ''}
                       </p>
                     </div>
-                    <OccasionBadge status={o.status} />
+                    <CalendarBadge status={entry.status} />
                   </li>
                 ))}
               </ul>
@@ -113,39 +94,34 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* Automation status */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader
-              title="Automation Status"
+              title="Recent Job Status"
               icon={<span aria-hidden>⚡</span>}
-              description="Most recent pipeline steps"
-              action={
-                <Link href="/history">
-                  <Button>History</Button>
-                </Link>
-              }
+              description={`${approvedJobs} approved · ${failedJobs} failed in this list`}
+              action={<Link href="/history" className={linkButton}>History</Link>}
             />
-            {latestRuns.length === 0 ? (
-              <EmptyState message="No runs yet." />
+            {recentJobs.length === 0 ? (
+              <EmptyState message="No design jobs yet." />
             ) : (
               <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                {latestRuns.map((r) => (
-                  <li key={r.id} className="flex items-start justify-between gap-3 px-5 py-3">
+                {recentJobs.map((job) => (
+                  <li key={job.id} className="flex items-start justify-between gap-3 px-5 py-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm text-slate-900 dark:text-slate-100">
-                        {r.step}
+                      <p className="truncate font-mono text-xs text-slate-900 dark:text-slate-100" title={job.id}>
+                        {shortId(job.id)}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                        {r.occasionName} · {formatDateTime(r.startedAt)}
+                        {formatDateTime(job.created_at)} · retry {job.retry_count}/{job.max_retries}
                       </p>
-                      {r.message ? (
-                        <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">
-                          {r.message}
+                      {job.error_message ? (
+                        <p className="mt-0.5 truncate text-xs text-red-500" title={job.error_message}>
+                          {job.error_message}
                         </p>
                       ) : null}
                     </div>
-                    <RunBadge status={r.status} />
+                    <DesignJobBadge status={job.status} />
                   </li>
                 ))}
               </ul>
@@ -154,50 +130,45 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Designs */}
       <div className="mt-6">
         <Card>
           <CardHeader
-            title="Recent Designs"
+            title="Recent Generated Assets"
             icon={<span aria-hidden>🎨</span>}
-            description="Generated posters awaiting review or already approved"
-            action={
-              <Link href="/designs">
-                <Button>View all</Button>
-              </Link>
-            }
+            description="Approved jobs load their PNG through GET /api/designs/:id/result"
+            action={<Link href="/designs" className={linkButton}>All jobs</Link>}
           />
-          {recentDesigns.length === 0 ? (
-            <EmptyState message="No designs generated yet." />
+          {recentJobs.length === 0 ? (
+            <EmptyState message="No design jobs to display." />
           ) : (
-            <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
-              {recentDesigns.map((d) => (
-                <div
-                  key={d.id}
-                  className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800"
-                >
-                  <div className="flex aspect-[4/5] items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
-                    {d.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={d.imageUrl}
-                        alt={d.title}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="px-3 text-center text-xs text-slate-400 dark:text-slate-600">
-                        {d.status === 'generating' ? 'Generating…' : 'No preview'}
-                      </span>
-                    )}
+            <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+              {recentJobs.slice(0, 3).map((job) => {
+                const approved = job.status.toUpperCase() === 'APPROVED';
+                return (
+                  <div key={job.id} className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div className="flex aspect-[1200/630] items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+                      {approved && jobs.live ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/api/backend/api/designs/${encodeURIComponent(job.id)}/result`}
+                          alt={`Generated asset for design job ${job.id}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="px-3 text-center text-xs text-slate-400 dark:text-slate-600">
+                          {approved ? 'Sample asset not loaded' : 'Asset available after approval'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 p-3">
+                      <p className="truncate font-mono text-xs text-slate-700 dark:text-slate-300" title={job.id}>
+                        {shortId(job.id)}
+                      </p>
+                      <DesignJobBadge status={job.status} />
+                    </div>
                   </div>
-                  <div className="space-y-2 p-3">
-                    <p className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">
-                      {d.title}
-                    </p>
-                    <DesignBadge status={d.status} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>
