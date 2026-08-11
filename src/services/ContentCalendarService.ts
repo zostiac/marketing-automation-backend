@@ -255,7 +255,8 @@ export class ContentCalendarService {
 
   /**
    * Import the curated festivals into a school's events table. Re-running the
-   * method updates existing festival events instead of creating duplicates.
+   * method updates matching events and removes stale imported events for the
+   * year, so festival names and dates can safely be changed in the data file.
    */
   static async syncNepalFestivals(
     schoolId: string,
@@ -277,6 +278,9 @@ export class ContentCalendarService {
       );
     }
 
+    const yearStart = this.bsToAd(bsYear, 1, 1);
+    const nextYearStart = this.bsToAd(bsYear + 1, 1, 1);
+
     const result = await db.query(
       `WITH festival_data AS (
          SELECT *
@@ -287,6 +291,20 @@ export class ContentCalendarService {
            relevance text,
            custom_instructions text
          )
+       ),
+       deleted_stale_festivals AS (
+         DELETE FROM events existing
+         WHERE existing.school_id = $1
+           AND existing.event_type = 'nepal_festival'
+           AND existing.event_date >= $3::date
+           AND existing.event_date < $4::date
+           AND NOT EXISTS (
+             SELECT 1
+             FROM festival_data current
+             WHERE current.name = existing.name
+               AND current.event_date = existing.event_date
+           )
+         RETURNING existing.id
        )
        INSERT INTO events
          (school_id, name, event_date, event_type, description, relevance,
@@ -303,7 +321,7 @@ export class ContentCalendarService {
          custom_instructions = EXCLUDED.custom_instructions,
          updated_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [schoolId, JSON.stringify(festivalRows)],
+      [schoolId, JSON.stringify(festivalRows), yearStart, nextYearStart],
     );
 
     return result.rows;
