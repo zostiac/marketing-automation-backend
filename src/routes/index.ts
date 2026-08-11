@@ -7,6 +7,7 @@ import { AdminController } from "../controllers/AdminController";
 import { AnalyticsController } from "../controllers/AnalyticsController";
 import { SocialMediaController } from "../controllers/SocialMediaController";
 import { ContentCalendarController } from "../controllers/ContentCalendarController";
+import { DashboardController } from "../controllers/DashboardController";
 
 const router = Router();
 
@@ -62,5 +63,58 @@ router.post(
   "/calendar/schedule-publish",
   ContentCalendarController.schedulePublishing,
 );
+
+// Dashboard-compatible endpoints (used by Next.js frontend src/lib/data.ts)
+// These are the routes the Vercel dashboard probes for live data.
+// They intentionally have no :schoolId param so the frontend can call them
+// without knowing the school; they return aggregated or provider-backed data.
+router.get("/occasions", DashboardController.getOccasions);
+router.get("/designs", DashboardController.getDesigns);
+router.get("/channels", DashboardController.getChannels);
+router.get("/runs", DashboardController.getRuns);
+router.get("/branding", DashboardController.getBranding);
+router.get("/stats", DashboardController.getStats);
+
+// Also expose dashboard design mutation helpers for future client actions
+router.post("/designs/:id/approve", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Mark job approved and asset quality approved if present
+    const { db } = await import("../config/database");
+    await db.query(`UPDATE design_jobs SET status = 'APPROVED', completed_at = CURRENT_TIMESTAMP WHERE id = $1`, [id]);
+    await db.query(`UPDATE assets SET quality_status = 'APPROVED', approved_at = CURRENT_TIMESTAMP WHERE design_job_id = $1`, [id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: String(e) });
+  }
+});
+router.post("/designs/:id/reject", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { db } = await import("../config/database");
+    await db.query(`UPDATE assets SET quality_status = 'NEEDS_REVISION' WHERE design_job_id = $1`, [id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: String(e) });
+  }
+});
+router.post("/designs/:id/regenerate", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { db } = await import("../config/database");
+    const { designQueue } = await import("../queues/designQueue");
+    const { config } = await import("../config/env");
+    const jobRow = await db.query(`SELECT design_request_id FROM design_jobs WHERE id = $1`, [id]);
+    if (!jobRow.rows.length) return res.status(404).json({ error: "Design not found" });
+    await db.query(`UPDATE design_jobs SET status = 'QUEUED', retry_count = 0, error_message = NULL WHERE id = $1`, [id]);
+    await designQueue.add(
+      { jobId: id, designRequestId: jobRow.rows[0].design_request_id },
+      { attempts: config.max_retries, backoff: { type: "exponential", delay: 2000 } },
+    );
+    res.json({ ok: true, status: "QUEUED" });
+  } catch (e) {
+    res.status(400).json({ error: String(e) });
+  }
+});
 
 export default router;

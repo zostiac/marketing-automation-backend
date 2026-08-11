@@ -136,7 +136,7 @@ export const NEPAL_FESTIVALS: ReadonlyArray<NepalFestivalDefinition> = [
     name: "Nag Panchami",
     name_nepali: "नाग पञ्चमी",
     description:
-      "Pooja and pasting of Nag (snake deity) pictures on doorways to protect homes from evil spirits and snakebites.",
+      "A festival honouring serpent deities and praying for protection and wellbeing.",
     scope: "national",
     is_public_holiday: true,
     id: "fest_2026_02",
