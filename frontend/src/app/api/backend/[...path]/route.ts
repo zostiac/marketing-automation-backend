@@ -1,11 +1,9 @@
 /**
  * Server-side proxy: /api/backend/* → $API_URL/*
  *
- * Client Components (approve/reject/regenerate buttons, once you wire them up)
- * should POST here rather than to Railway directly. Benefits:
- *   - No CORS configuration, ever. Same-origin from the browser's perspective.
- *   - API_TOKEN stays on the server and is attached here.
- *   - The backend's real hostname is never exposed in client bundles or devtools.
+ * The UI uses this same-origin route to load generated image bytes from
+ * GET /api/designs/:id/result. JSON reads and mutations use the server-only API
+ * client directly. API_TOKEN is attached here without entering browser code.
  */
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -23,7 +21,7 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
     return NextResponse.json(
       {
         error: 'Backend not configured',
-        detail: 'API_URL is not set. Add it in Vercel → Settings → Environment Variables, then redeploy.',
+        detail: 'API_URL is not set in the frontend environment.',
       },
       { status: 503 },
     );

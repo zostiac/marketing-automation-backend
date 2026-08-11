@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Marketing Automation — Amar English School',
-  description: 'Control panel for occasion detection, poster generation, and outreach.',
+  description: 'Control panel for content scheduling and design generation jobs.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

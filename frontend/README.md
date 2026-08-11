@@ -1,129 +1,81 @@
 # Marketing Automation — Frontend
 
-Next.js 16 (App Router) + TypeScript + Tailwind 4 control panel for Amar English School's
-marketing automation backend.
+Next.js 16 (App Router), TypeScript, and Tailwind 4 control panel for the Express backend in the repository root.
 
-## Why Next.js and not Vite
+## Backend contract
 
-Vercel builds and maintains Next.js, so deploys are zero-config. More importantly, Next
-gives you a **server layer** — and that's what makes the backend connection clean:
+The frontend calls routes that actually exist in `src/routes/index.ts`:
 
-| | Next.js (chosen) | Vite SPA |
-|---|---|---|
-| CORS setup | none needed | must configure on backend for every preview URL |
-| API URL / token | stays server-side | shipped in the JS bundle, visible in devtools |
-| Backend down | page still renders | white screen or client-side error |
-| Auth later | HTTP-only cookies work | token in localStorage (XSS-exposed) |
+| Frontend section | Backend route |
+|---|---|
+| Health | `GET /health` |
+| Dashboard totals | `GET /api/admin/stats` |
+| Recent jobs | `GET /api/admin/jobs/recent?limit=…` |
+| Job metrics | `GET /api/admin/metrics` |
+| Calendar | `GET /api/calendar/:schoolId?monthOffset=…` |
+| School profile | `GET /api/school/profile/:id` |
+| Branding | `GET /api/school/branding/:id` |
+| Generate design | `POST /api/designs/request` |
+| Retry failed job | `POST /api/jobs/:id/retry` |
+| Generated PNG | `GET /api/designs/:id/result` |
 
-Your backend URL and any API token never reach the browser.
+Database/API fields remain in snake_case in `src/lib/types.ts`, matching Express responses. PostgreSQL `COUNT` strings are converted to numbers in `src/lib/data.ts`.
+
+The backend does **not** expose `GET /api/occasions`, `/api/designs`, `/api/channels`, `/api/runs`, `/api/branding`, `/api/stats`, or `/healthz`; the frontend does not call or advertise those routes.
 
 ## Pages
 
-| Route | What it does |
+| Route | Purpose |
 |---|---|
-| `/` | Stats, upcoming occasions, automation status, recent designs |
-| `/occasions` | Detected festivals + manual campaigns, split upcoming/past |
-| `/designs` | Poster grid; approve / reject / regenerate / download / send |
-| `/history` | Full run log — every step, duration, and failure message |
-| `/settings` | **Live backend health probe**, branding, channel connections |
+| `/` | Global totals, current-month calendar entries, and recent jobs |
+| `/calendar` | Month navigation for school content-calendar records; request a design for an entry |
+| `/designs` | Recent design job states, generated PNGs, downloads, and failed-job retries |
+| `/history` | Recent `design_jobs` rows and aggregate status metrics |
+| `/settings` | `/health` probe, frontend configuration, school profile, and branding |
+| `/occasions` | Redirects old bookmarks to `/calendar` |
 
 ## Local development
 
 ```bash
 cd frontend
 npm install
-npm run dev     # http://localhost:3000
+cp .env.example .env.local
+npm run dev
 ```
 
-Runs fine with **no backend**. Every page falls back to sample data and shows an amber
-"showing sample data" banner, so demo figures are never mistaken for real ones.
-
-To point at a real backend, create `.env.local`:
-
-```bash
-API_URL=http://localhost:3001
-```
+Then open <http://localhost:3000>. The backend defaults to port 3000 too, so run one of the services on another port during local development (for example, backend `PORT=3001` and frontend `API_URL=http://localhost:3001`).
 
 ## Environment variables
 
 | Variable | Required | Notes |
 |---|---|---|
-| `API_URL` | yes | Backend base URL, no trailing slash |
-| `API_TOKEN` | no | Sent as `Authorization: Bearer …` |
-| `API_TIMEOUT_MS` | no | Default `8000` |
+| `API_URL` | Yes | Backend base URL, no trailing `/api` or slash |
+| `SCHOOL_ID` | Yes for school data | UUID from the backend `schools.id` column |
+| `API_TOKEN` | No | Forwarded as `Authorization: Bearer …` if backend auth is added |
+| `API_TIMEOUT_MS` | No | Default `8000` |
 
-⚠️ **No `NEXT_PUBLIC_` prefix.** That prefix would inline the value into the client bundle.
-These are read server-side only — that's the whole point.
+Do not add a `NEXT_PUBLIC_` prefix. Values are read by Server Components, Server Actions, and Route Handlers and are not bundled into browser JavaScript.
 
-⚠️ **Use the public Railway domain** (`*.up.railway.app`), not `*.railway.internal`.
-Vercel functions run outside Railway's private network and can't resolve internal hostnames.
-
-## Deploying to Vercel
-
-1. **New Project** → import the same GitHub repo (a second Vercel project on one repo is fine).
-2. **Root Directory** → `frontend`. Framework preset auto-detects as Next.js.
-3. **Environment Variables** → add `API_URL` to Production, Preview, and Development.
-4. Deploy.
-
-Then handle the old `marketing-automation-backend` Vercel project — it's the one throwing
-500s. Delete it, or repoint its Root Directory at `frontend` and reuse it. Don't leave it
-failing.
-
-**Optional** — skip rebuilds when only backend code changed. Settings → Git → Ignored Build Step:
-
-```bash
-git diff --quiet HEAD^ HEAD -- ./frontend
-```
+For Vercel, use the backend's public Railway domain (`*.up.railway.app`), not a Railway private-network hostname. Add `API_URL` and `SCHOOL_ID` to each required Vercel environment and redeploy.
 
 ## Architecture
 
-```
-Browser ──► Vercel (Next.js) ──► Railway (Express + Postgres + Redis)
-             │
-             ├── Server Components call src/lib/data.ts directly
-             └── Client Components POST to /api/backend/* (proxy route)
-```
-
-- `src/lib/api.ts` — server-only fetch client with timeout + graceful fallback
-- `src/lib/data.ts` — one function per section, each with sample-data fallback
-- `src/app/api/backend/[...path]/route.ts` — proxy for client-side mutations
-- `src/lib/sample-data.ts` — demo data, only used when the backend is unreachable
-
-### Wiring up the real endpoints
-
-`src/lib/data.ts` currently expects these routes. Adjust the paths to match your Express app:
-
-```
-GET /api/occasions   → Occasion[]
-GET /api/designs     → Design[]
-GET /api/channels    → Channel[]
-GET /api/runs        → AutomationRun[]
-GET /api/branding    → Branding
-GET /api/stats       → DashboardStats
-GET /healthz         → { status, config }
+```text
+Browser ──► Next.js
+             ├── Server Components ──► Express JSON endpoints
+             ├── Server Actions ─────► Express mutation endpoints
+             └── /api/backend/* ─────► Express generated-image endpoint
 ```
 
-Shapes are in `src/lib/types.ts`. Once the backend returns real data the sample fallback
-stops being used automatically and the amber banner disappears — no code change needed.
+- `src/lib/api.ts` — server-only fetch client, `/health` probe, timeout, and configuration helpers
+- `src/lib/data.ts` — exact route mapping plus count normalisation
+- `src/lib/types.ts` — Express response contracts
+- `src/app/actions.ts` — generate and retry mutations using backend request field names
+- `src/app/api/backend/[...path]/route.ts` — same-origin proxy used for generated image bytes
+- `src/lib/sample-data.ts` — contract-shaped fallback values, always identified by the warning banner
 
-### Making the buttons work
+## Production notes
 
-Approve/reject/regenerate are currently non-functional placeholders. To wire one up, add a
-Server Action rather than a client fetch:
-
-```tsx
-async function approve(formData: FormData) {
-  'use server';
-  await apiFetch(`/api/designs/${formData.get('id')}/approve`, { method: 'POST' });
-  revalidatePath('/designs');
-}
-```
-
-Server Actions keep the token server-side and refresh the page data automatically.
-
-## Before production
-
-- [ ] Add authentication — the dashboard is currently public to anyone with the URL
-- [ ] Point `API_URL` at the live backend and confirm `/settings` shows **Healthy**
-- [ ] Replace poster placeholders with real `imageUrl` values from the backend
-- [ ] Consider `revalidate` values in `src/lib/api.ts` if you want caching over freshness
+- Add authentication before exposing the dashboard publicly. The current backend routes are not protected.
+- A school UUID must already exist; the backend currently has no list-schools endpoint for the frontend to discover one.
+- Channel credentials stay in backend environment variables. Since there is no channel-status GET route, the settings page only renders `social_media_info` profile metadata and does not invent connection states.
