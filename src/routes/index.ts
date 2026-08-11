@@ -11,6 +11,8 @@ import { ContentCalendarController } from "../controllers/ContentCalendarControl
 const router = Router();
 
 // School
+router.get("/schools", SchoolController.listSchools);
+router.post("/school", SchoolController.createSchool);
 router.get("/school/profile/:id", SchoolController.getSchoolProfile);
 router.put("/school/profile/:id", SchoolController.updateSchoolProfile);
 router.get("/school/branding/:id", SchoolController.getBranding);
