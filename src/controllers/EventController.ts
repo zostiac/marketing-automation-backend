@@ -1,49 +1,40 @@
 import { Request, Response } from 'express';
 import { EventService } from '../services/EventService';
+import { AppError } from '../utils/errors';
+import { isUuid } from '../utils/helpers';
 
 export class EventController {
-  static async createEvent(req: Request, res: Response) {
-    try {
-      const event = await EventService.createEvent(req.body.school_id, req.body);
-      res.status(201).json(event);
-    } catch (error) {
-      res.status(400).json({ error: String(error) });
+  static async listEvents(req: Request, res: Response) {
+    const schoolId = String(req.query.schoolId || '');
+    if (!isUuid(schoolId)) {
+      throw AppError.badRequest('schoolId query parameter is required');
     }
+    const events = await EventService.listEvents(schoolId);
+    res.json(events);
+  }
+
+  static async createEvent(req: Request, res: Response) {
+    const event = await EventService.createEvent(req.body.school_id, req.body);
+    res.status(201).json(event);
   }
 
   static async getTodayEvents(req: Request, res: Response) {
-    try {
-      const events = await EventService.getTodayEvents(req.params.schoolId);
-      res.json(events);
-    } catch (error) {
-      res.status(400).json({ error: String(error) });
-    }
+    const events = await EventService.getTodayEvents(req.params.schoolId);
+    res.json(events);
   }
 
   static async getEvent(req: Request, res: Response) {
-    try {
-      const event = await EventService.getEvent(req.params.id);
-      res.json(event);
-    } catch (error) {
-      res.status(404).json({ error: 'Event not found' });
-    }
+    const event = await EventService.getEvent(req.params.id);
+    res.json(event);
   }
 
   static async updateEvent(req: Request, res: Response) {
-    try {
-      const event = await EventService.updateEvent(req.params.id, req.body);
-      res.json(event);
-    } catch (error) {
-      res.status(400).json({ error: String(error) });
-    }
+    const event = await EventService.updateEvent(req.params.id, req.body);
+    res.json(event);
   }
 
   static async deleteEvent(req: Request, res: Response) {
-    try {
-      await EventService.deleteEvent(req.params.id);
-      res.status(204).send();
-    } catch (error) {
-      res.status(404).json({ error: 'Event not found' });
-    }
+    await EventService.deleteEvent(req.params.id);
+    res.status(204).send();
   }
 }

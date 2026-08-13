@@ -1,4 +1,5 @@
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,6 +20,18 @@ export class AssetManager {
     }));
 
     return key;
+  }
+
+  static async getSignedUrl(
+    bucket: string,
+    key: string,
+    expiresInSeconds = 3600,
+  ): Promise<string> {
+    return getSignedUrl(
+      s3Client,
+      new GetObjectCommand({ Bucket: bucket, Key: key }),
+      { expiresIn: expiresInSeconds },
+    );
   }
 
   static async retrieveAsset(bucket: string, key: string): Promise<Buffer> {
