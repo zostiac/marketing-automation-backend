@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AlertTriangle, ArrowRight } from 'lucide-react';
 
 /** Shown whenever at least one section is using the labelled sample fallback. */
 export function ConnectionBanner({
@@ -25,36 +26,39 @@ export function ConnectionBanner({
       : 'Backend request failed — showing sample data';
 
   return (
-    <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950/50">
+    <div className="mb-6 rounded-lg border border-warning/30 bg-warning-muted px-4 py-3">
       <div className="flex items-start gap-3">
-        <span aria-hidden className="mt-0.5 text-lg leading-none">⚠️</span>
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">{title}</p>
-          <p className="mt-1 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+          <p className="text-sm font-semibold text-warning">{title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-warning/90">
             {missingApi ? (
               <>
-                Set <code className="rounded bg-amber-100 px-1 py-0.5 font-mono dark:bg-amber-900">API_URL</code>{' '}
+                Set <code className="rounded bg-warning/10 px-1 py-0.5 font-mono">API_URL</code>{' '}
                 in the frontend environment and redeploy.
               </>
             ) : missingSchool ? (
               <>
-                School-scoped API routes require <code className="rounded bg-amber-100 px-1 py-0.5 font-mono dark:bg-amber-900">SCHOOL_ID</code>{' '}
+                School-scoped API routes require{' '}
+                <code className="rounded bg-warning/10 px-1 py-0.5 font-mono">SCHOOL_ID</code>{' '}
                 in the frontend environment.
               </>
             ) : (
-              <>One or more sections could not load from Express. Labelled fallback values are not production data.</>
+              <>
+                One or more sections could not load from Express. Labelled fallback values are not
+                production data.
+              </>
             )}
           </p>
           {error ? (
-            <p className="mt-1.5 truncate font-mono text-[11px] text-amber-700 dark:text-amber-400">
-              {error}
-            </p>
+            <p className="mt-1.5 truncate font-mono text-[11px] text-warning/80">{error}</p>
           ) : null}
           <Link
             href="/settings"
-            className="mt-2 inline-block text-xs font-medium text-amber-900 underline underline-offset-2 hover:text-amber-700 dark:text-amber-200"
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-warning underline-offset-2 hover:underline"
           >
-            Check connection status →
+            Check connection status
+            <ArrowRight className="h-3 w-3" aria-hidden />
           </Link>
         </div>
       </div>

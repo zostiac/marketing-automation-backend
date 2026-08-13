@@ -2,13 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  CalendarDays,
+  History,
+  LayoutDashboard,
+  Palette,
+  Settings,
+  type LucideIcon,
+} from 'lucide-react';
 
-const LINKS = [
-  { href: '/', label: 'Dashboard', icon: '📊' },
-  { href: '/calendar', label: 'Calendar', icon: '📅' },
-  { href: '/designs', label: 'Design jobs', icon: '🎨' },
-  { href: '/history', label: 'Job history', icon: '🕓' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
+const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/designs', label: 'Design jobs', icon: Palette },
+  { href: '/history', label: 'Job history', icon: History },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function Nav() {
@@ -16,21 +24,21 @@ export function Nav() {
 
   return (
     <nav className="flex gap-1 overflow-x-auto" aria-label="Main">
-      {LINKS.map((link) => {
-        const active = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
+      {LINKS.map(({ href, label, icon: Icon }) => {
+        const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
         return (
           <Link
-            key={link.href}
-            href={link.href}
+            key={href}
+            href={href}
             aria-current={active ? 'page' : undefined}
             className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               active
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
-            <span aria-hidden>{link.icon}</span>
-            {link.label}
+            <Icon className="h-4 w-4" aria-hidden />
+            {label}
           </Link>
         );
       })}
