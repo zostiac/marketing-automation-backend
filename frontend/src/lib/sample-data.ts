@@ -6,9 +6,15 @@ import type {
   ContentCalendarRecord,
   DesignJob,
   JobMetric,
+  NepalFestival,
+  NepalToday,
   SchoolBranding,
+  SchoolEvent,
   SchoolProfile,
+  SocialPlatformStatus,
+  SuccessRateRow,
   SystemStats,
+  TopEventRow,
 } from './types';
 
 export const sampleStats: SystemStats = {
@@ -130,25 +136,101 @@ export const sampleCalendar: ContentCalendarRecord[] = [
 
 export const sampleBranding: SchoolBranding = {
   name: 'Amar English School',
-  tagline: 'Learning today, leading tomorrow',
+  tagline: 'Education is the Light of Life',
   logo_url: null,
-  brand_colors: { primary: '#1d4ed8', secondary: '#f59e0b' },
-  typography: { heading: 'Inter', body: 'Inter' },
-  visual_style: 'modern and welcoming',
+  brand_colors: { primary: '#0B4F8C', secondary: '#F2C94C', accent: '#FFFFFF' },
+  typography: { heading: 'Modern Sans', body: 'Elegant Devanagari' },
+  visual_style: 'modern, minimal, editorial, premium',
 };
 
 export const sampleSchoolProfile: SchoolProfile = {
   id: '30000000-0000-4000-8000-000000000001',
   name: 'Amar English School',
-  tagline: 'Learning today, leading tomorrow',
-  location: 'Kathmandu, Nepal',
+  tagline: 'Education is the Light of Life',
+  location: 'Devchuli-16, Rajahar, Nawalparasi',
   official_logo_url: null,
-  brand_colors: { primary: '#1d4ed8', secondary: '#f59e0b' },
-  typography: { heading: 'Inter', body: 'Inter' },
-  visual_style: 'modern and welcoming',
+  brand_colors: { primary: '#0B4F8C', secondary: '#F2C94C', accent: '#FFFFFF' },
+  typography: { heading: 'Modern Sans', body: 'Elegant Devanagari' },
+  visual_style: 'modern, minimal, editorial, premium',
   logo_protection_rules: null,
-  design_preferences: { preferred_format: 'social_media_post' },
-  social_media_info: { facebook: 'Amar English School' },
+  design_preferences: { tone: 'professional, premium, modern and school-appropriate' },
+  social_media_info: {
+    facebook: 'https://www.facebook.com/amarrajahar16',
+    instagram: 'https://www.instagram.com/amarrajahar/',
+    tiktok: 'https://www.tiktok.com/@amarenglishschool?lang=en',
+  },
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-08-01T00:00:00.000Z',
 };
+
+export const sampleSchools: SchoolProfile[] = [sampleSchoolProfile];
+
+export const sampleSocialStatus: SocialPlatformStatus = {
+  facebook: true,
+  instagram: false,
+  tiktok: false,
+};
+
+export const sampleToday: NepalToday = {
+  ad_date: '2026-08-13',
+  nepali_date: {
+    year: 2083,
+    month: 4,
+    day: 29,
+    iso: '2083-04-29',
+    formatted: 'Thu, 29 Shrawan 2083',
+    formatted_nepali: 'बिहि, २९ श्रावण २०८३',
+    month_name: 'Shrawan',
+    month_name_nepali: 'श्रावण',
+    weekday: 'Thu',
+    weekday_nepali: 'बिहि',
+  },
+};
+
+export const sampleFestivals: NepalFestival[] = [
+  {
+    bs_year: 2083,
+    bs_month: 5,
+    bs_day: 1,
+    name: 'Nag Panchami',
+    name_nepali: 'नाग पञ्चमी',
+    description: 'Traditional festival honouring serpent deities.',
+    scope: 'national',
+    is_public_holiday: true,
+    ad_date: '2026-08-17',
+    nepali_date: {
+      year: 2083,
+      month: 5,
+      day: 1,
+      iso: '2083-05-01',
+      formatted: 'Sun, 1 Bhadra 2083',
+      formatted_nepali: 'आइत, १ भाद्र २०८३',
+      month_name: 'Bhadra',
+      month_name_nepali: 'भाद्र',
+      weekday: 'Sun',
+      weekday_nepali: 'आइत',
+    },
+    category: 'Major Festival',
+    content: {
+      caption_template: 'Warm wishes to our school community on Nag Panchami.',
+      hashtags: ['#NagPanchami', '#SchoolCommunity'],
+    },
+  },
+];
+
+export const sampleTodayEvents: SchoolEvent[] = [];
+
+export const sampleSuccessRates: SuccessRateRow[] = [
+  { event_type: 'nepal_festival', total: 4, successful: 3, success_rate: 75 },
+  { event_type: 'school', total: 2, successful: 2, success_rate: 100 },
+];
+
+export const sampleTopEvents: TopEventRow[] = [
+  {
+    id: '40000000-0000-4000-8000-000000000001',
+    name: 'Nag Panchami',
+    design_count: 3,
+    avg_file_size: 420000,
+    quality_approved_count: 2,
+  },
+];

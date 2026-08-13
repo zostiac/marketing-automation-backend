@@ -12,11 +12,21 @@ The frontend calls routes that actually exist in `src/routes/index.ts`:
 | Dashboard totals | `GET /api/admin/stats` |
 | Recent jobs | `GET /api/admin/jobs/recent?limit=…` |
 | Job metrics | `GET /api/admin/metrics` |
+| Schools | `GET /api/schools` |
+| Today (AD + BS) | `GET /api/calendar/today` |
+| Festivals | `GET /api/calendar/festivals?year=&month=` |
 | Calendar | `GET /api/calendar/:schoolId?monthOffset=…` |
+| Today's events | `GET /api/events/:schoolId/today` |
+| Social credentials | `GET /api/social/status` |
+| Success rates | `GET /api/analytics/success-rate/:schoolId` |
+| Top events | `GET /api/analytics/top-events/:schoolId` |
 | School profile | `GET /api/school/profile/:id` |
 | Branding | `GET /api/school/branding/:id` |
 | Generate design | `POST /api/designs/request` |
 | Retry failed job | `POST /api/jobs/:id/retry` |
+| Sync festivals | `POST /api/calendar/sync-festivals` |
+| Publish entry | `POST /api/calendar/entries/:id/publish` |
+| Publish due | `POST /api/calendar/publish-due` |
 | Generated PNG | `GET /api/designs/:id/result` |
 
 Database/API fields remain in snake_case in `src/lib/types.ts`, matching Express responses. PostgreSQL `COUNT` strings are converted to numbers in `src/lib/data.ts`.
@@ -28,7 +38,7 @@ The backend does **not** expose `GET /api/occasions`, `/api/designs`, `/api/chan
 | Route | Purpose |
 |---|---|
 | `/` | Global totals, current-month calendar entries, and recent jobs |
-| `/calendar` | Month navigation for school content-calendar records; request a design for an entry |
+| `/calendar` | Month navigation, Nepal festivals, festival sync, and publish actions |
 | `/designs` | Recent design job states, generated PNGs, downloads, and failed-job retries |
 | `/history` | Recent `design_jobs` rows and aggregate status metrics |
 | `/settings` | `/health` probe, frontend configuration, school profile, and branding |
@@ -76,6 +86,6 @@ Browser ──► Next.js
 
 ## Production notes
 
-- Add authentication before exposing the dashboard publicly. The current backend routes are not protected.
-- A school UUID must already exist; the backend currently has no list-schools endpoint for the frontend to discover one.
-- Channel credentials stay in backend environment variables. Since there is no channel-status GET route, the settings page only renders `social_media_info` profile metadata and does not invent connection states.
+- Add authentication before exposing the dashboard publicly. The current backend routes are only protected when `API_TOKEN` is set.
+- Discover school UUIDs from `GET /api/schools` on the Settings page, then set `SCHOOL_ID`.
+- Channel credentials stay in backend environment variables. Settings shows `GET /api/social/status` (configured flags only, never tokens) plus `social_media_info` profile metadata.

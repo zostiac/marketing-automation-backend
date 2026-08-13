@@ -62,3 +62,85 @@ export async function retryJobAction(
     return { status: 'error', message: errorMessage(error) };
   }
 }
+
+export async function publishEntryAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const entryId = String(formData.get('entry_id') ?? '').trim();
+  if (!entryId) return { status: 'error', message: 'Calendar entry ID is missing' };
+
+  try {
+    const result = await apiFetch<{ status: string; error?: string }>(
+      `/api/calendar/entries/${encodeURIComponent(entryId)}/publish`,
+      { method: 'POST' },
+    );
+
+    revalidatePath('/');
+    revalidatePath('/calendar');
+    if (result.status === 'published') {
+      return { status: 'success', message: 'Published to configured platforms' };
+    }
+    return {
+      status: 'error',
+      message: result.error || `Publish finished as ${result.status}`,
+    };
+  } catch (error) {
+    return { status: 'error', message: errorMessage(error) };
+  }
+}
+
+export async function publishDueAction(
+  _previous: ActionState,
+  _formData?: FormData,
+): Promise<ActionState> {
+  try {
+    const result = await apiFetch<{
+      processed: number;
+      published: number;
+      failed: number;
+      skipped: number;
+    }>('/api/calendar/publish-due', { method: 'POST' });
+
+    revalidatePath('/');
+    revalidatePath('/calendar');
+    return {
+      status: 'success',
+      message: `Due run: ${result.published} published, ${result.failed} failed, ${result.skipped} skipped`,
+    };
+  } catch (error) {
+    return { status: 'error', message: errorMessage(error) };
+  }
+}
+
+export async function syncFestivalsAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const schoolId = configuredSchoolId();
+  const year = Number(formData.get('bs_year'));
+  if (!schoolId) return { status: 'error', message: 'SCHOOL_ID is not configured' };
+  if (!Number.isInteger(year)) return { status: 'error', message: 'BS year is missing' };
+
+  try {
+    const result = await apiFetch<{ count: number }>('/api/calendar/sync-festivals', {
+      method: 'POST',
+      body: JSON.stringify({
+        schoolId,
+        bsYear: year,
+        createCalendarEntries: true,
+        platforms: ['facebook', 'instagram'],
+        status: 'draft',
+      }),
+    });
+
+    revalidatePath('/');
+    revalidatePath('/calendar');
+    return {
+      status: 'success',
+      message: `Synced ${result.count} festival event${result.count === 1 ? '' : 's'}`,
+    };
+  } catch (error) {
+    return { status: 'error', message: errorMessage(error) };
+  }
+}

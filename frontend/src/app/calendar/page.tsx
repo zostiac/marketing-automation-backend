@@ -1,11 +1,16 @@
 import Link from 'next/link';
-import { CalendarDays, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Landmark } from 'lucide-react';
+import {
+  PublishDueButton,
+  PublishEntryButton,
+  SyncFestivalsButton,
+} from '@/components/calendar-actions';
 import { ConnectionBanner } from '@/components/connection-banner';
 import { RequestDesignButton } from '@/components/job-actions';
 import { CalendarBadge } from '@/components/status';
 import { Badge, Button, Card, CardHeader, EmptyState } from '@/components/ui';
 import { isApiConfigured, isSchoolConfigured } from '@/lib/api';
-import { getCalendar } from '@/lib/data';
+import { getCalendar, getFestivals, getToday } from '@/lib/data';
 import { formatDate, relativeDays } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -41,19 +46,27 @@ export default async function CalendarPage({
   searchParams: Promise<{ monthOffset?: string | string[] }>;
 }) {
   const offset = parseOffset((await searchParams).monthOffset);
-  const calendar = await getCalendar(offset);
+  const today = await getToday();
+  const bsYear = today.data.nepali_date.year;
+  const [calendar, festivals] = await Promise.all([
+    getCalendar(offset),
+    getFestivals(bsYear, offset === 0 ? today.data.nepali_date.month : undefined),
+  ]);
   const now = new Date();
   const entries = [...calendar.data].sort(
     (a, b) => +new Date(a.scheduled_publish_date) - +new Date(b.scheduled_publish_date),
   );
-  const pending = entries.filter((entry) => entry.status !== 'published');
+  const pending = entries.filter((entry) => entry.status === 'draft' || entry.status === 'scheduled');
+  const failed = entries.filter((entry) => entry.status === 'failed');
   const published = entries.filter((entry) => entry.status === 'published');
+  const live = calendar.live && today.live;
+  const error = [calendar.error, today.error, festivals.error].filter(Boolean).join(' · ') || undefined;
 
   return (
     <>
       <ConnectionBanner
-        live={calendar.live}
-        error={calendar.error}
+        live={live}
+        error={error}
         configured={isApiConfigured()}
         requiresSchool
         schoolConfigured={isSchoolConfigured()}
@@ -63,7 +76,8 @@ export default async function CalendarPage({
         <div>
           <h2 className="text-xl font-semibold text-foreground">Content Calendar</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Scheduled publishing entries for {monthLabel(offset)}, with Bikram Sambat dates.
+            Scheduled publishing entries for {monthLabel(offset)}. Today is{' '}
+            {today.data.nepali_date.formatted} ({today.data.ad_date} AD).
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -76,6 +90,46 @@ export default async function CalendarPage({
           </Link>
         </div>
       </div>
+
+      {calendar.live ? (
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <SyncFestivalsButton bsYear={bsYear} />
+          <PublishDueButton />
+        </div>
+      ) : null}
+
+      <Card className="mb-6">
+        <CardHeader
+          title={`Nepal festivals (${festivals.data.length})`}
+          icon={<Landmark className="h-4 w-4" />}
+          description={
+            offset === 0
+              ? `GET /api/calendar/festivals?year=${bsYear}&month=${today.data.nepali_date.month}`
+              : `GET /api/calendar/festivals?year=${bsYear}`
+          }
+        />
+        {festivals.data.length === 0 ? (
+          <EmptyState message={`No curated festivals for BS ${bsYear}.`} />
+        ) : (
+          <ul className="divide-y divide-border">
+            {festivals.data.slice(0, 12).map((festival) => (
+              <li key={`${festival.bs_year}-${festival.bs_month}-${festival.bs_day}-${festival.name}`} className="flex items-start justify-between gap-4 px-5 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {festival.name}{' '}
+                    <span className="font-normal text-muted-foreground">{festival.name_nepali}</span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {festival.nepali_date.formatted} · {festival.ad_date} AD
+                    {festival.is_public_holiday ? ' · public holiday' : ''}
+                  </p>
+                </div>
+                <Badge tone="violet">{festival.scope}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <Card className="mb-6">
         <CardHeader
@@ -118,9 +172,12 @@ export default async function CalendarPage({
                       {entry.hashtags.map((tag) => <Badge key={tag}>{tag}</Badge>)}
                     </div>
                   </div>
-                  <div className="shrink-0">
+                  <div className="flex shrink-0 flex-col items-end gap-2">
                     {calendar.live ? (
-                      <RequestDesignButton eventId={entry.event_id} />
+                      <>
+                        <RequestDesignButton eventId={entry.event_id} />
+                        {entry.status === 'scheduled' ? <PublishEntryButton entryId={entry.id} /> : null}
+                      </>
                     ) : (
                       <Button variant="primary" disabled title="Connect the live backend first">
                         Generate design
@@ -133,6 +190,31 @@ export default async function CalendarPage({
           </ul>
         )}
       </Card>
+
+      {failed.length > 0 ? (
+        <Card className="mb-6">
+          <CardHeader title={`Failed publishes (${failed.length})`} />
+          <ul className="divide-y divide-border">
+            {failed.map((entry) => (
+              <li key={entry.id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-foreground">
+                    {entry.name || `Event ${entry.event_id.slice(0, 8)}…`}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {formatDate(entry.scheduled_publish_date)}
+                    {entry.platforms.length ? ` · ${entry.platforms.join(', ')}` : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarBadge status={entry.status} />
+                  {calendar.live ? <PublishEntryButton entryId={entry.id} /> : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader title={`Published (${published.length})`} icon={<CheckCircle2 className="h-4 w-4" />} />
