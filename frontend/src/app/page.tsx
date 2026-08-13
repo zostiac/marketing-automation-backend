@@ -4,15 +4,25 @@ import {
   CalendarDays,
   FileImage,
   Image as ImageIcon,
+  Radio,
   School,
   Sparkles,
   Zap,
 } from 'lucide-react';
 import { ConnectionBanner } from '@/components/connection-banner';
-import { CalendarBadge, DesignJobBadge } from '@/components/status';
+import { CalendarBadge, DesignJobBadge, SocialStatusBadges } from '@/components/status';
 import { Card, CardHeader, EmptyState, StatTile } from '@/components/ui';
 import { isApiConfigured, isSchoolConfigured } from '@/lib/api';
-import { getCalendar, getRecentJobs, getSystemStats } from '@/lib/data';
+import {
+  getCalendar,
+  getRecentJobs,
+  getSocialStatus,
+  getSuccessRates,
+  getSystemStats,
+  getToday,
+  getTodayEvents,
+  getTopEvents,
+} from '@/lib/data';
 import { formatDate, formatDateTime, relativeDays } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -25,14 +35,24 @@ function shortId(id: string): string {
 }
 
 export default async function DashboardPage() {
-  const [stats, calendar, jobs] = await Promise.all([
-    getSystemStats(),
-    getCalendar(),
-    getRecentJobs(20),
-  ]);
+  const [stats, calendar, jobs, today, todayEvents, social, successRates, topEvents] =
+    await Promise.all([
+      getSystemStats(),
+      getCalendar(),
+      getRecentJobs(20),
+      getToday(),
+      getTodayEvents(),
+      getSocialStatus(),
+      getSuccessRates(),
+      getTopEvents(5),
+    ]);
 
-  const live = stats.live && calendar.live && jobs.live;
-  const error = [stats.error, calendar.error, jobs.error].filter(Boolean).join(' · ') || undefined;
+  const live =
+    stats.live && calendar.live && jobs.live && today.live && social.live;
+  const error =
+    [stats.error, calendar.error, jobs.error, today.error, todayEvents.error, social.error]
+      .filter(Boolean)
+      .join(' · ') || undefined;
   const now = new Date();
   const calendarEntries = [...calendar.data]
     .sort(
@@ -44,6 +64,7 @@ export default async function DashboardPage() {
     .slice(0, 5);
   const approvedJobs = recentJobs.filter((job) => job.status.toUpperCase() === 'APPROVED').length;
   const failedJobs = recentJobs.filter((job) => job.status.toUpperCase() === 'FAILED').length;
+  const configuredPlatforms = Object.values(social.data).filter(Boolean).length;
 
   return (
     <>
@@ -55,11 +76,20 @@ export default async function DashboardPage() {
         schoolConfigured={isSchoolConfigured()}
       />
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Dashboard</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Live system totals, this month&apos;s content calendar, and recent design jobs.
-        </p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">Dashboard</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Live system totals, Nepal calendar, and recent design jobs.
+          </p>
+        </div>
+        <div className="rounded-lg border border-border bg-card px-3 py-2 text-right">
+          <p className="text-xs text-muted-foreground">Today in Nepal</p>
+          <p className="text-sm font-medium text-foreground">
+            {today.data.nepali_date.formatted}
+          </p>
+          <p className="text-[11px] text-muted-foreground">{today.data.ad_date} AD</p>
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -67,6 +97,53 @@ export default async function DashboardPage() {
         <StatTile label="Events" value={stats.data.events} sublabel="in the database" tone="violet" icon={<CalendarDays className="h-4 w-4" />} />
         <StatTile label="Design jobs" value={stats.data.jobs} sublabel="all time" tone="amber" icon={<Sparkles className="h-4 w-4" />} />
         <StatTile label="Assets" value={stats.data.assets} sublabel="generated files" tone="green" icon={<FileImage className="h-4 w-4" />} />
+      </div>
+
+      <div className="mb-6 grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader
+            title="Today's events"
+            icon={<CalendarDays className="h-4 w-4" />}
+            description="GET /api/events/:schoolId/today"
+          />
+          {todayEvents.data.length === 0 ? (
+            <EmptyState message="No school events scheduled for today." />
+          ) : (
+            <ul className="divide-y divide-border">
+              {todayEvents.data.map((event) => (
+                <li key={event.id} className="flex items-center justify-between gap-4 px-5 py-3.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{event.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {event.event_type.replaceAll('_', ' ')}
+                      {event.preferred_design_type ? ` · ${event.preferred_design_type}` : ''}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Social platforms"
+            icon={<Radio className="h-4 w-4" />}
+            description="GET /api/social/status — credentials only, never tokens"
+            action={
+              <Link href="/settings" className={linkButton}>
+                Settings
+                <ArrowRight className="h-3 w-3" aria-hidden />
+              </Link>
+            }
+          />
+          <div className="space-y-3 px-5 py-4">
+            <SocialStatusBadges status={social.data} />
+            <p className="text-xs text-muted-foreground">
+              {configuredPlatforms} of 3 platforms have live credentials.
+            </p>
+          </div>
+        </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -84,7 +161,7 @@ export default async function DashboardPage() {
               }
             />
             {calendarEntries.length === 0 ? (
-              <EmptyState message="No calendar entries this month." hint="Create entries through the calendar API." />
+              <EmptyState message="No calendar entries this month." hint="Sync festivals or create entries through the calendar API." />
             ) : (
               <ul className="divide-y divide-border">
                 {calendarEntries.map((entry) => (
@@ -146,6 +223,62 @@ export default async function DashboardPage() {
             )}
           </Card>
         </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader
+            title="Success rate by event type"
+            description="GET /api/analytics/success-rate/:schoolId"
+          />
+          {successRates.data.length === 0 ? (
+            <EmptyState message="No analytics yet." />
+          ) : (
+            <ul className="divide-y divide-border">
+              {successRates.data.map((row) => (
+                <li key={row.event_type} className="flex items-center justify-between gap-4 px-5 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {row.event_type.replaceAll('_', ' ')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {row.successful}/{row.total} approved
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold tabular-nums text-foreground">
+                    {row.success_rate}%
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Top events"
+            description="GET /api/analytics/top-events/:schoolId"
+          />
+          {topEvents.data.length === 0 ? (
+            <EmptyState message="No event analytics yet." />
+          ) : (
+            <ul className="divide-y divide-border">
+              {topEvents.data.map((row) => (
+                <li key={row.id} className="flex items-center justify-between gap-4 px-5 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {row.quality_approved_count} quality-approved assets
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold tabular-nums text-foreground">
+                    {row.design_count}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
 
       <div className="mt-6">

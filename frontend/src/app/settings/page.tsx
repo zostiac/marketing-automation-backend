@@ -1,5 +1,6 @@
 import { Palette, Plug, Puzzle, Radio, School } from 'lucide-react';
 import { ConnectionBanner } from '@/components/connection-banner';
+import { SocialStatusBadges } from '@/components/status';
 import { Badge, Card, CardHeader, EmptyState } from '@/components/ui';
 import {
   checkBackendHealth,
@@ -7,7 +8,7 @@ import {
   isApiConfigured,
   isSchoolConfigured,
 } from '@/lib/api';
-import { getBranding, getSchoolProfile } from '@/lib/data';
+import { getBranding, getSchoolProfile, getSchools, getSocialStatus } from '@/lib/data';
 import { formatDateTime } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -47,16 +48,21 @@ function ObjectRows({ value }: { value?: Record<string, unknown> | null }) {
 }
 
 export default async function SettingsPage() {
-  const [health, branding, profile] = await Promise.all([
+  const [health, branding, profile, schools, social] = await Promise.all([
     checkBackendHealth(),
     getBranding(),
     getSchoolProfile(),
+    getSchools(),
+    getSocialStatus(),
   ]);
   const apiConfigured = isApiConfigured();
   const schoolConfigured = isSchoolConfigured();
   const schoolDataLive = branding.live && profile.live;
-  const schoolError = [branding.error, profile.error].filter(Boolean).join(' · ') || undefined;
+  const schoolError = [branding.error, profile.error, schools.error, social.error]
+    .filter(Boolean)
+    .join(' · ') || undefined;
   const colors = Object.entries(branding.data.brand_colors ?? {});
+  const selectedSchoolId = configuredSchoolId();
 
   return (
     <>
@@ -118,7 +124,7 @@ export default async function SettingsPage() {
             <p className="mb-2 font-semibold text-foreground">Frontend environment checklist</p>
             <ol className="list-inside list-decimal space-y-1">
               <li>Set <code className="rounded bg-muted px-1 font-mono">API_URL</code> to the backend base URL (without <code>/api</code>).</li>
-              <li>Set <code className="rounded bg-muted px-1 font-mono">SCHOOL_ID</code> to an existing schools.id UUID.</li>
+              <li>Set <code className="rounded bg-muted px-1 font-mono">SCHOOL_ID</code> to a UUID from GET /api/schools (listed below when the API is reachable).</li>
               <li>Redeploy after changing environment variables.</li>
             </ol>
           </div>
@@ -206,11 +212,48 @@ export default async function SettingsPage() {
 
         <Card>
           <CardHeader
-            title="Social Media Information"
+            title="Social platform credentials"
             icon={<Radio className="h-4 w-4" />}
-            description="Profile metadata only; the backend has no channel-status GET endpoint"
+            description="GET /api/social/status — configured flags only, never tokens"
           />
+          <div className="space-y-4 p-5">
+            <SocialStatusBadges status={social.data} />
+            <p className="text-xs text-muted-foreground">
+              Profile handles below are metadata from the school record, not live OAuth state.
+            </p>
+          </div>
           <ObjectRows value={profile.data.social_media_info} />
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Registered schools"
+            icon={<School className="h-4 w-4" />}
+            description="GET /api/schools — use an id as SCHOOL_ID"
+          />
+          {schools.data.length === 0 ? (
+            <EmptyState message="No schools returned." />
+          ) : (
+            <ul className="divide-y divide-border">
+              {schools.data.map((school) => {
+                const selected = school.id === selectedSchoolId;
+                return (
+                  <li key={school.id} className="flex items-start justify-between gap-4 px-5 py-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{school.name}</p>
+                      <p className="mt-0.5 font-mono text-[11px] text-muted-foreground" title={school.id}>
+                        {school.id}
+                      </p>
+                      {school.location ? (
+                        <p className="mt-0.5 text-xs text-muted-foreground">{school.location}</p>
+                      ) : null}
+                    </div>
+                    {selected ? <Badge tone="green">Selected</Badge> : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </Card>
       </div>
     </>

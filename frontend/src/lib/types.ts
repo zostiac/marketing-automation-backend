@@ -39,7 +39,7 @@ export interface JobMetric {
   count: number;
 }
 
-export type CalendarStatus = 'draft' | 'scheduled' | 'published';
+export type CalendarStatus = 'draft' | 'scheduled' | 'published' | 'failed';
 
 export interface NepaliDateInfo {
   year: number;
@@ -70,6 +70,80 @@ export interface ContentCalendarRecord {
   nepali_date: NepaliDateInfo | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export type SocialPlatform = 'facebook' | 'instagram' | 'tiktok';
+
+export type SocialPlatformStatus = Record<SocialPlatform, boolean>;
+
+export interface NepalToday {
+  ad_date: string;
+  nepali_date: NepaliDateInfo;
+}
+
+export interface NepalFestival {
+  bs_year: number;
+  bs_month: number;
+  bs_day: number;
+  name: string;
+  name_nepali: string;
+  description: string;
+  scope: string;
+  is_public_holiday: boolean;
+  ad_date: string;
+  nepali_date: NepaliDateInfo;
+  category?: string;
+  content?: {
+    caption_template?: string;
+    hashtags?: string[];
+  };
+}
+
+export interface SchoolEvent {
+  id: string;
+  school_id: string;
+  name: string;
+  event_date: string;
+  event_type: string;
+  description?: string | null;
+  relevance?: string | null;
+  preferred_design_type?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SuccessRateRow {
+  event_type: string;
+  total: number;
+  successful: number;
+  success_rate: number;
+}
+
+export interface TopEventRow {
+  id: string;
+  name: string;
+  design_count: number;
+  avg_file_size: number | null;
+  quality_approved_count: number;
+}
+
+export interface EntryPublishResult {
+  entryId: string;
+  status: 'published' | 'scheduled' | 'failed' | 'skipped';
+  error?: string;
+}
+
+export interface PublishRunResult {
+  processed: number;
+  published: number;
+  failed: number;
+  skipped: number;
+  entries: EntryPublishResult[];
+}
+
+export interface FestivalSyncResult {
+  count: number;
+  events: SchoolEvent[];
 }
 
 export interface SchoolBranding {
