@@ -44,6 +44,8 @@ Important optional variables:
 | Variable | Notes |
 |---|---|
 | `API_TOKEN` | If set, every `/api/*` route requires `Authorization: Bearer …` or `X-API-Key`. If unset, routes stay public and a warning is logged. |
+| `OPENAI_CHAT_MODEL` | OpenAI chat model for creative direction (default `gpt-4o`) |
+| `OPENAI_IMAGE_MODEL` | OpenAI image model for generated designs (default `dall-e-3`) |
 | `BUCKET_*` | S3/Tigris credentials used to store generated PNGs |
 | `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID` | Page photo publishing |
 | `INSTAGRAM_ACCESS_TOKEN` + `INSTAGRAM_BUSINESS_ACCOUNT_ID` | Graph API publishing via a signed image URL |
