@@ -43,6 +43,8 @@ export const config = {
     process.env.S3_SECRET_KEY ||
     '',
   openai_api_key: process.env.OPENAI_API_KEY || '',
+  openai_chat_model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
+  openai_image_model: process.env.OPENAI_IMAGE_MODEL || 'dall-e-3',
   image_generation_provider: process.env.IMAGE_GENERATION_PROVIDER || 'openai',
   max_retries: parseInt(process.env.MAX_RETRIES || '3', 10),
   job_timeout_ms: parseInt(process.env.JOB_TIMEOUT_MS || '300000', 10),

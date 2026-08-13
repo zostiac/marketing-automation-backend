@@ -1,11 +1,12 @@
 import { openai } from '../config/ai-providers';
+import { config } from '../config/env';
 
 export class DesignGeneratorAdapter {
   static async generateImage(prompt: string, dimensions: { width: number; height: number }): Promise<Buffer> {
     const size = this.mapDimensionsToSize(dimensions);
     
     const response = await openai.images.generate({
-      model: 'dall-e-3',
+      model: config.openai_image_model,
       prompt: prompt,
       n: 1,
       size: size as '1024x1024' | '1792x1024' | '1024x1792',

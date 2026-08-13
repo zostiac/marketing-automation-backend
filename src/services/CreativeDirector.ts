@@ -1,4 +1,5 @@
 import { openai } from '../config/ai-providers';
+import { config } from '../config/env';
 import { School, Event } from '../models/types';
 
 export interface CreativeDirectionInput {
@@ -53,7 +54,7 @@ Create unique, professional creative direction. Return ONLY valid JSON:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: config.openai_chat_model,
       messages: [{
         role: 'user',
         content: prompt,
