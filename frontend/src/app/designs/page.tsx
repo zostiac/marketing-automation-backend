@@ -9,7 +9,11 @@ import {
   Zap,
 } from 'lucide-react';
 import { ConnectionBanner } from '@/components/connection-banner';
-import { RetryJobButton } from '@/components/job-actions';
+import {
+  DeleteAllFailedJobsButton,
+  DeleteJobButton,
+  RetryJobButton,
+} from '@/components/job-actions';
 import { DesignJobBadge } from '@/components/status';
 import { Button, Card, EmptyState } from '@/components/ui';
 import { isApiConfigured } from '@/lib/api';
@@ -114,7 +118,12 @@ function JobCard({ job, live }: { job: DesignJob; live: boolean }) {
               </a>
             </>
           ) : null}
-          {failed && live ? <RetryJobButton jobId={job.id} /> : null}
+          {failed && live ? (
+            <>
+              <RetryJobButton jobId={job.id} />
+              <DeleteJobButton jobId={job.id} />
+            </>
+          ) : null}
           {!live ? <Button disabled title="Connect the live backend to use job actions">Actions unavailable</Button> : null}
           {status === 'PROCESSING' || status === 'QUEUED' ? (
             <Button disabled title="Use the job status endpoint to monitor progress">
@@ -147,16 +156,20 @@ export default async function DesignsPage() {
   });
   const active = ordered.filter((job) => job.status.toUpperCase() !== 'APPROVED');
   const approved = ordered.filter((job) => job.status.toUpperCase() === 'APPROVED');
+  const failedCount = ordered.filter((job) => job.status.toUpperCase() === 'FAILED').length;
 
   return (
     <>
       <ConnectionBanner live={jobs.live} error={jobs.error} configured={isApiConfigured()} />
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Design Jobs</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Queue state and generated results from the backend&apos;s design job records.
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">Design Jobs</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Queue state and generated results from the backend&apos;s design job records.
+          </p>
+        </div>
+        {jobs.live && failedCount > 0 ? <DeleteAllFailedJobsButton count={failedCount} /> : null}
       </div>
 
       {active.length > 0 ? (

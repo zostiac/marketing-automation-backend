@@ -91,6 +91,8 @@ Existing frontend contracts are unchanged (`snake_case` JSON, same paths and sta
 - `GET /api/designs/:id/result` — PNG bytes
 - `GET /api/jobs/:id/status`
 - `POST /api/jobs/:id/retry`
+- `DELETE /api/jobs/:id` — delete a `FAILED` job with its assets and orphaned request (409 if the job is not failed)
+- `DELETE /api/jobs/failed?olderThanDays=` — delete every failed job, optionally only those older than N days
 
 ### Admin and analytics
 

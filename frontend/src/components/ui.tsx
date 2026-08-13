@@ -83,6 +83,7 @@ export function Button({
   type = 'button',
   disabled,
   title,
+  onClick,
 }: {
   children: ReactNode;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -90,6 +91,8 @@ export function Button({
   type?: 'button' | 'submit';
   disabled?: boolean;
   title?: string;
+  /** Client components only; omit in server-rendered usage. */
+  onClick?: () => void;
 }) {
   const base =
     'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
@@ -105,6 +108,7 @@ export function Button({
       type={type}
       disabled={disabled}
       title={title}
+      onClick={onClick}
       className={`${base} ${sizes[size]} ${variants[variant]}`}
     >
       {children}

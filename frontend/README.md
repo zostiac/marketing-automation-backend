@@ -24,6 +24,8 @@ The frontend calls routes that actually exist in `src/routes/index.ts`:
 | Branding | `GET /api/school/branding/:id` |
 | Generate design | `POST /api/designs/request` |
 | Retry failed job | `POST /api/jobs/:id/retry` |
+| Delete failed job | `DELETE /api/jobs/:id` |
+| Clear all failed jobs | `DELETE /api/jobs/failed` |
 | Sync festivals | `POST /api/calendar/sync-festivals` |
 | Publish entry | `POST /api/calendar/entries/:id/publish` |
 | Publish due | `POST /api/calendar/publish-due` |
@@ -39,7 +41,7 @@ The backend does **not** expose `GET /api/occasions`, `/api/designs`, `/api/chan
 |---|---|
 | `/` | Global totals, current-month calendar entries, and recent jobs |
 | `/calendar` | Month navigation, Nepal festivals, festival sync, and publish actions |
-| `/designs` | Recent design job states, generated PNGs, downloads, and failed-job retries |
+| `/designs` | Recent design job states, generated PNGs, downloads, failed-job retries, and failed-job deletion (single or bulk) |
 | `/history` | Recent `design_jobs` rows and aggregate status metrics |
 | `/settings` | `/health` probe, frontend configuration, school profile, and branding |
 | `/occasions` | Redirects old bookmarks to `/calendar` |

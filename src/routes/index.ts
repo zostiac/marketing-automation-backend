@@ -57,9 +57,11 @@ router.post(
 router.get("/designs/:id/status", asyncHandler(DesignController.getDesignStatus));
 router.get("/designs/:id/result", asyncHandler(DesignController.getDesignResult));
 
-// Jobs
+// Jobs — static path before :id so "failed" is not read as an id
+router.delete("/jobs/failed", asyncHandler(JobController.deleteFailedJobs));
 router.get("/jobs/:id/status", asyncHandler(JobController.getJobStatus));
 router.post("/jobs/:id/retry", asyncHandler(JobController.retryJob));
+router.delete("/jobs/:id", asyncHandler(JobController.deleteJob));
 
 // Admin endpoints
 router.get("/admin/stats", asyncHandler(AdminController.getSystemStats));
