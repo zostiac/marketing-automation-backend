@@ -63,6 +63,48 @@ export async function retryJobAction(
   }
 }
 
+export async function deleteJobAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const jobId = String(formData.get('job_id') ?? '').trim();
+  if (!jobId) return { status: 'error', message: 'Job ID is missing' };
+
+  try {
+    await apiFetch<{ deleted: number }>(`/api/jobs/${encodeURIComponent(jobId)}`, {
+      method: 'DELETE',
+    });
+
+    revalidatePath('/');
+    revalidatePath('/designs');
+    revalidatePath('/history');
+    return { status: 'success', message: 'Failed job deleted' };
+  } catch (error) {
+    return { status: 'error', message: errorMessage(error) };
+  }
+}
+
+export async function deleteFailedJobsAction(
+  _previous: ActionState,
+  _formData?: FormData,
+): Promise<ActionState> {
+  try {
+    const result = await apiFetch<{ deleted: number }>('/api/jobs/failed', {
+      method: 'DELETE',
+    });
+
+    revalidatePath('/');
+    revalidatePath('/designs');
+    revalidatePath('/history');
+    return {
+      status: 'success',
+      message: `Deleted ${result.deleted} failed job${result.deleted === 1 ? '' : 's'}`,
+    };
+  } catch (error) {
+    return { status: 'error', message: errorMessage(error) };
+  }
+}
+
 export async function publishEntryAction(
   _previous: ActionState,
   formData: FormData,
