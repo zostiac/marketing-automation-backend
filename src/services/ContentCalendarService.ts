@@ -4,8 +4,18 @@ import {
   NEPAL_FESTIVALS,
   NepalFestivalDefinition,
 } from "../data/nepalFestivals";
+import {
+  NEPAL_TIMEZONE,
+  formatIsoDate,
+  getKathmanduDateParts,
+  utcDateToIso,
+} from "../utils/dates";
 
-export type ContentCalendarStatus = "draft" | "scheduled" | "published";
+export type ContentCalendarStatus =
+  | "draft"
+  | "scheduled"
+  | "published"
+  | "failed";
 
 export interface ContentCalendarEntry {
   event_id: string;
@@ -71,12 +81,18 @@ export interface NepaliCalendarMonth {
   days: NepaliCalendarDay[];
 }
 
-const NEPAL_TIMEZONE = "Asia/Kathmandu" as const;
 const SUPPORTED_STATUS = new Set<ContentCalendarStatus>([
   "draft",
   "scheduled",
   "published",
+  "failed",
 ]);
+
+export interface FestivalSyncOptions {
+  createCalendarEntries?: boolean;
+  platforms?: string[];
+  status?: Extract<ContentCalendarStatus, "draft" | "scheduled">;
+}
 
 export class ContentCalendarService {
   /**
@@ -137,7 +153,7 @@ export class ContentCalendarService {
       throw new Error("monthOffset must be an integer");
     }
 
-    const kathmanduToday = this.getKathmanduDateParts(new Date());
+    const kathmanduToday = getKathmanduDateParts(new Date());
     const monthStart = new Date(
       Date.UTC(kathmanduToday.year, kathmanduToday.month - 1 + monthOffset, 1),
     );
@@ -147,8 +163,8 @@ export class ContentCalendarService {
 
     return this.getCalendarBetween(
       schoolId,
-      this.utcDateToIso(monthStart),
-      this.utcDateToIso(nextMonthStart),
+      utcDateToIso(monthStart),
+      utcDateToIso(nextMonthStart),
     );
   }
 
@@ -212,8 +228,8 @@ export class ContentCalendarService {
 
   /** Return the current date in Nepal in both calendars. */
   static getTodayInNepal(): { ad_date: string; nepali_date: NepaliDateInfo } {
-    const parts = this.getKathmanduDateParts(new Date());
-    const adDate = this.formatIsoDate(parts.year, parts.month, parts.day);
+    const parts = getKathmanduDateParts(new Date());
+    const adDate = formatIsoDate(parts.year, parts.month, parts.day);
     return {
       ad_date: adDate,
       nepali_date: this.toNepaliDate(adDate),
@@ -261,6 +277,7 @@ export class ContentCalendarService {
   static async syncNepalFestivals(
     schoolId: string,
     bsYear: number,
+    options: FestivalSyncOptions = {},
   ): Promise<any[]> {
     const festivalRows = this.getNepalFestivals(bsYear).map((festival) => ({
       name: `${festival.name} (${festival.name_nepali})`,
@@ -324,7 +341,48 @@ export class ContentCalendarService {
       [schoolId, JSON.stringify(festivalRows), yearStart, nextYearStart],
     );
 
+    if (options.createCalendarEntries) {
+      const festivals = this.getNepalFestivals(bsYear);
+      const festivalByKey = new Map(
+        festivals.map((festival) => [
+          `${festival.name} (${festival.name_nepali})|${festival.ad_date}`,
+          festival,
+        ]),
+      );
+
+      for (const event of result.rows) {
+        const eventDate = this.normaliseDate(event.event_date);
+        const festival = festivalByKey.get(`${event.name}|${eventDate}`);
+        await this.ensureCalendarEntry(schoolId, {
+          event_id: event.id,
+          scheduled_publish_date: eventDate,
+          platforms: options.platforms?.length
+            ? options.platforms
+            : ["facebook", "instagram"],
+          status: options.status || "draft",
+          caption: festival?.content?.caption_template,
+          hashtags: festival?.content?.hashtags || [],
+        });
+      }
+    }
+
     return result.rows;
+  }
+
+  static async ensureCalendarEntry(
+    schoolId: string,
+    entry: ContentCalendarEntry,
+  ): Promise<ContentCalendarRecord> {
+    const existing = await db.query(
+      `SELECT * FROM content_calendar
+       WHERE school_id = $1 AND event_id = $2
+       LIMIT 1`,
+      [schoolId, entry.event_id],
+    );
+    if (existing.rows.length) {
+      return this.enrichCalendarRow(existing.rows[0]);
+    }
+    return this.createCalendarEntry(schoolId, entry);
   }
 
   static async schedulePublishing(
@@ -401,7 +459,7 @@ export class ContentCalendarService {
       this.normaliseStringArray(entry.hashtags, "hashtags");
     }
     if (!SUPPORTED_STATUS.has(entry.status)) {
-      throw new Error("status must be draft, scheduled or published");
+      throw new Error("status must be draft, scheduled, published or failed");
     }
     this.normaliseDate(entry.scheduled_publish_date);
   }
@@ -467,8 +525,8 @@ export class ContentCalendarService {
       if (Number.isNaN(value.getTime())) {
         throw new Error("scheduled_publish_date must be a valid date");
       }
-      const parts = this.getKathmanduDateParts(value);
-      return this.formatIsoDate(parts.year, parts.month, parts.day);
+      const parts = getKathmanduDateParts(value);
+      return formatIsoDate(parts.year, parts.month, parts.day);
     }
 
     if (typeof value !== "string") {
@@ -486,8 +544,8 @@ export class ContentCalendarService {
     if (Number.isNaN(parsed.getTime())) {
       throw new Error("scheduled_publish_date must be a valid date");
     }
-    const parts = this.getKathmanduDateParts(parsed);
-    return this.formatIsoDate(parts.year, parts.month, parts.day);
+    const parts = getKathmanduDateParts(parsed);
+    return formatIsoDate(parts.year, parts.month, parts.day);
   }
 
   private static parseIsoDate(value: string): {
@@ -513,28 +571,6 @@ export class ContentCalendarService {
     }
 
     return { year, month, day };
-  }
-
-  private static getKathmanduDateParts(date: Date): {
-    year: number;
-    month: number;
-    day: number;
-  } {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: NEPAL_TIMEZONE,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const parts = formatter.formatToParts(date);
-    const value = (type: Intl.DateTimeFormatPartTypes) =>
-      Number(parts.find((part) => part.type === type)?.value);
-
-    return {
-      year: value("year"),
-      month: value("month"),
-      day: value("day"),
-    };
   }
 
   private static normaliseStringArray(value: unknown, field: string): string[] {
@@ -594,32 +630,14 @@ export class ContentCalendarService {
     const result = new Date(
       Date.UTC(parts.year, parts.month - 1, parts.day + days),
     );
-    return this.utcDateToIso(result);
+    return utcDateToIso(result);
   }
 
   private static localDateToIso(date: Date): string {
-    return this.formatIsoDate(
+    return formatIsoDate(
       date.getFullYear(),
       date.getMonth() + 1,
       date.getDate(),
     );
-  }
-
-  private static utcDateToIso(date: Date): string {
-    return this.formatIsoDate(
-      date.getUTCFullYear(),
-      date.getUTCMonth() + 1,
-      date.getUTCDate(),
-    );
-  }
-
-  private static formatIsoDate(
-    year: number,
-    month: number,
-    day: number,
-  ): string {
-    return `${year.toString().padStart(4, "0")}-${month
-      .toString()
-      .padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
   }
 }

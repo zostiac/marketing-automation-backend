@@ -126,6 +126,9 @@ CREATE TABLE IF NOT EXISTS content_calendar (
   caption TEXT,
   hashtags JSONB,
   published_at TIMESTAMP,
+  publish_results JSONB,
+  publish_error TEXT,
+  publish_attempts INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

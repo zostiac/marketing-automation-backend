@@ -1,10 +1,11 @@
 import { db } from '../config/database';
 import { School } from '../models/types';
+import { AppError } from '../utils/errors';
 
 export class SchoolService {
   static async getSchoolProfile(schoolId: string): Promise<School> {
     const result = await db.query('SELECT * FROM schools WHERE id = $1', [schoolId]);
-    if (!result.rows.length) throw new Error('School not found');
+    if (!result.rows.length) throw AppError.notFound('School not found');
     return result.rows[0];
   }
 
@@ -104,7 +105,7 @@ export class SchoolService {
       [...values, schoolId]
     );
     
-    if (!result.rows.length) throw new Error('School not found');
+    if (!result.rows.length) throw AppError.notFound('School not found');
     return result.rows[0];
   }
 

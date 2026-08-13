@@ -124,6 +124,9 @@ CREATE TABLE IF NOT EXISTS content_calendar (
   caption TEXT,
   hashtags JSONB,
   published_at TIMESTAMP,
+  publish_results JSONB,
+  publish_error TEXT,
+  publish_attempts INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -192,6 +195,9 @@ export async function runMigrations() {
       `ALTER TABLE content_calendar ALTER COLUMN status TYPE VARCHAR(50)`,
       `ALTER TABLE content_calendar ALTER COLUMN status SET DEFAULT 'draft'`,
       `ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS published_at TIMESTAMP`,
+      `ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS publish_results JSONB`,
+      `ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS publish_error TEXT`,
+      `ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS publish_attempts INTEGER DEFAULT 0`,
       `DROP INDEX IF EXISTS idx_content_calendar_school_date`,
       `DROP INDEX IF EXISTS idx_content_calendar_event_id`,
       `CREATE INDEX IF NOT EXISTS idx_content_calendar_school_id ON content_calendar(school_id)`,

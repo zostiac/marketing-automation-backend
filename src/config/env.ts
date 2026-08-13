@@ -49,6 +49,8 @@ export const config = {
   quality_check_enabled: process.env.QUALITY_CHECK_ENABLED === 'true',
   log_level: process.env.LOG_LEVEL || 'info',
   scheduled_check_time: process.env.SCHEDULED_EVENTS_CHECK_TIME || '08:00',
+  api_token: (process.env.API_TOKEN || '').trim(),
+  publish_check_cron: process.env.PUBLISH_CHECK_CRON || '*/15 * * * *',
 };
 
 // Validate required config on startup

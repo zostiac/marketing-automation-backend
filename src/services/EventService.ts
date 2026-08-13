@@ -1,5 +1,7 @@
 import { db } from '../config/database';
 import { Event } from '../models/types';
+import { AppError } from '../utils/errors';
+import { kathmanduTodayIso } from '../utils/dates';
 
 export class EventService {
   static async createEvent(schoolId: string, eventData: Omit<Event, 'id' | 'created_at' | 'updated_at'>): Promise<Event> {
@@ -11,8 +13,16 @@ export class EventService {
     return result.rows[0];
   }
 
+  static async listEvents(schoolId: string): Promise<Event[]> {
+    const result = await db.query(
+      'SELECT * FROM events WHERE school_id = $1 ORDER BY event_date ASC, name ASC',
+      [schoolId],
+    );
+    return result.rows;
+  }
+
   static async getTodayEvents(schoolId: string): Promise<Event[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = kathmanduTodayIso();
     const result = await db.query(
       'SELECT * FROM events WHERE school_id = $1 AND event_date = $2',
       [schoolId, today]
@@ -22,7 +32,7 @@ export class EventService {
 
   static async getEvent(eventId: string): Promise<Event> {
     const result = await db.query('SELECT * FROM events WHERE id = $1', [eventId]);
-    if (!result.rows.length) throw new Error('Event not found');
+    if (!result.rows.length) throw AppError.notFound('Event not found');
     return result.rows[0];
   }
 
@@ -30,12 +40,12 @@ export class EventService {
     const fields = Object.keys(updates).filter(k => updates[k as keyof Partial<Event>] !== undefined);
     const values = fields.map(f => updates[f as keyof Partial<Event>]);
     const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
-    
+
     const result = await db.query(
       `UPDATE events SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${fields.length + 1} RETURNING *`,
       [...values, eventId]
     );
-    
+
     return result.rows[0];
   }
 
