@@ -1,4 +1,13 @@
 import Link from 'next/link';
+import {
+  ArrowRight,
+  CalendarDays,
+  FileImage,
+  Image as ImageIcon,
+  School,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 import { ConnectionBanner } from '@/components/connection-banner';
 import { CalendarBadge, DesignJobBadge } from '@/components/status';
 import { Card, CardHeader, EmptyState, StatTile } from '@/components/ui';
@@ -9,7 +18,7 @@ import { formatDate, formatDateTime, relativeDays } from '@/lib/format';
 export const dynamic = 'force-dynamic';
 
 const linkButton =
-  'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700';
+  'inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted';
 
 function shortId(id: string): string {
   return `${id.slice(0, 8)}…`;
@@ -27,8 +36,7 @@ export default async function DashboardPage() {
   const now = new Date();
   const calendarEntries = [...calendar.data]
     .sort(
-      (a, b) =>
-        +new Date(a.scheduled_publish_date) - +new Date(b.scheduled_publish_date),
+      (a, b) => +new Date(a.scheduled_publish_date) - +new Date(b.scheduled_publish_date),
     )
     .slice(0, 5);
   const recentJobs = [...jobs.data]
@@ -48,17 +56,17 @@ export default async function DashboardPage() {
       />
 
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Dashboard</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <h2 className="text-xl font-semibold text-foreground">Dashboard</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Live system totals, this month&apos;s content calendar, and recent design jobs.
         </p>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="Schools" value={stats.data.schools} sublabel="registered" tone="blue" />
-        <StatTile label="Events" value={stats.data.events} sublabel="in the database" tone="violet" />
-        <StatTile label="Design jobs" value={stats.data.jobs} sublabel="all time" tone="amber" />
-        <StatTile label="Assets" value={stats.data.assets} sublabel="generated files" tone="green" />
+        <StatTile label="Schools" value={stats.data.schools} sublabel="registered" tone="blue" icon={<School className="h-4 w-4" />} />
+        <StatTile label="Events" value={stats.data.events} sublabel="in the database" tone="violet" icon={<CalendarDays className="h-4 w-4" />} />
+        <StatTile label="Design jobs" value={stats.data.jobs} sublabel="all time" tone="amber" icon={<Sparkles className="h-4 w-4" />} />
+        <StatTile label="Assets" value={stats.data.assets} sublabel="generated files" tone="green" icon={<FileImage className="h-4 w-4" />} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -66,21 +74,26 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader
               title="Content Calendar"
-              icon={<span aria-hidden>📅</span>}
+              icon={<CalendarDays className="h-4 w-4" />}
               description="Entries returned by GET /api/calendar/:schoolId for this month"
-              action={<Link href="/calendar" className={linkButton}>View calendar</Link>}
+              action={
+                <Link href="/calendar" className={linkButton}>
+                  View calendar
+                  <ArrowRight className="h-3 w-3" aria-hidden />
+                </Link>
+              }
             />
             {calendarEntries.length === 0 ? (
               <EmptyState message="No calendar entries this month." hint="Create entries through the calendar API." />
             ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+              <ul className="divide-y divide-border">
                 {calendarEntries.map((entry) => (
                   <li key={entry.id} className="flex items-center justify-between gap-4 px-5 py-3.5">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                      <p className="truncate text-sm font-medium text-foreground">
                         {entry.name || `Event ${shortId(entry.event_id)}`}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 text-xs text-muted-foreground">
                         {formatDate(entry.scheduled_publish_date)} ·{' '}
                         {relativeDays(entry.scheduled_publish_date, now)}
                         {entry.platforms.length ? ` · ${entry.platforms.join(', ')}` : ''}
@@ -98,25 +111,30 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader
               title="Recent Job Status"
-              icon={<span aria-hidden>⚡</span>}
+              icon={<Zap className="h-4 w-4" />}
               description={`${approvedJobs} approved · ${failedJobs} failed in this list`}
-              action={<Link href="/history" className={linkButton}>History</Link>}
+              action={
+                <Link href="/history" className={linkButton}>
+                  History
+                  <ArrowRight className="h-3 w-3" aria-hidden />
+                </Link>
+              }
             />
             {recentJobs.length === 0 ? (
               <EmptyState message="No design jobs yet." />
             ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+              <ul className="divide-y divide-border">
                 {recentJobs.map((job) => (
                   <li key={job.id} className="flex items-start justify-between gap-3 px-5 py-3">
                     <div className="min-w-0">
-                      <p className="truncate font-mono text-xs text-slate-900 dark:text-slate-100" title={job.id}>
+                      <p className="truncate font-mono text-xs text-foreground" title={job.id}>
                         {shortId(job.id)}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {formatDateTime(job.created_at)} · retry {job.retry_count}/{job.max_retries}
                       </p>
                       {job.error_message ? (
-                        <p className="mt-0.5 truncate text-xs text-red-500" title={job.error_message}>
+                        <p className="mt-0.5 truncate text-xs text-danger" title={job.error_message}>
                           {job.error_message}
                         </p>
                       ) : null}
@@ -134,9 +152,14 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader
             title="Recent Generated Assets"
-            icon={<span aria-hidden>🎨</span>}
+            icon={<ImageIcon className="h-4 w-4" />}
             description="Approved jobs load their PNG through GET /api/designs/:id/result"
-            action={<Link href="/designs" className={linkButton}>All jobs</Link>}
+            action={
+              <Link href="/designs" className={linkButton}>
+                All jobs
+                <ArrowRight className="h-3 w-3" aria-hidden />
+              </Link>
+            }
           />
           {recentJobs.length === 0 ? (
             <EmptyState message="No design jobs to display." />
@@ -145,8 +168,8 @@ export default async function DashboardPage() {
               {recentJobs.slice(0, 3).map((job) => {
                 const approved = job.status.toUpperCase() === 'APPROVED';
                 return (
-                  <div key={job.id} className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
-                    <div className="flex aspect-[1200/630] items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+                  <div key={job.id} className="overflow-hidden rounded-lg border border-border">
+                    <div className="flex aspect-[1200/630] items-center justify-center bg-muted">
                       {approved && jobs.live ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -155,13 +178,16 @@ export default async function DashboardPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <span className="px-3 text-center text-xs text-slate-400 dark:text-slate-600">
-                          {approved ? 'Sample asset not loaded' : 'Asset available after approval'}
-                        </span>
+                        <div className="flex flex-col items-center gap-1.5 px-3 text-center">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground/60" aria-hidden />
+                          <span className="text-xs text-muted-foreground">
+                            {approved ? 'Sample asset not loaded' : 'Asset available after approval'}
+                          </span>
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center justify-between gap-2 p-3">
-                      <p className="truncate font-mono text-xs text-slate-700 dark:text-slate-300" title={job.id}>
+                      <p className="truncate font-mono text-xs text-muted-foreground" title={job.id}>
                         {shortId(job.id)}
                       </p>
                       <DesignJobBadge status={job.status} />

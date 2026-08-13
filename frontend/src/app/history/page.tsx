@@ -1,3 +1,4 @@
+import { History } from 'lucide-react';
 import { ConnectionBanner } from '@/components/connection-banner';
 import { RetryJobButton } from '@/components/job-actions';
 import { DesignJobBadge } from '@/components/status';
@@ -21,8 +22,8 @@ export default async function HistoryPage() {
       <ConnectionBanner live={live} error={error} configured={isApiConfigured()} />
 
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Job History</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <h2 className="text-xl font-semibold text-foreground">Job History</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Recent design_jobs rows and aggregate status counts from the admin API.
         </p>
       </div>
@@ -37,7 +38,7 @@ export default async function HistoryPage() {
       <Card>
         <CardHeader
           title="Recent design jobs"
-          icon={<span aria-hidden>🕓</span>}
+          icon={<History className="h-4 w-4" />}
           description="GET /api/admin/jobs/recent (up to 100 rows)"
         />
         {sorted.length === 0 ? (
@@ -45,7 +46,7 @@ export default async function HistoryPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th scope="col" className="px-5 py-2.5 font-medium">Job / request</th>
                   <th scope="col" className="px-5 py-2.5 font-medium">Created</th>
@@ -55,32 +56,32 @@ export default async function HistoryPage() {
                   <th scope="col" className="px-5 py-2.5 font-medium"><span className="sr-only">Action</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border">
                 {sorted.map((job) => {
                   const failed = job.status.toUpperCase() === 'FAILED';
                   return (
-                    <tr key={job.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <tr key={job.id} className="transition-colors hover:bg-muted/50">
                       <td className="px-5 py-3">
-                        <p className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100" title={job.id}>
+                        <p className="font-mono text-xs font-medium text-foreground" title={job.id}>
                           {job.id.slice(0, 8)}…
                         </p>
-                        <p className="mt-0.5 font-mono text-[10px] text-slate-400" title={job.design_request_id}>
+                        <p className="mt-0.5 font-mono text-[10px] text-muted-foreground" title={job.design_request_id}>
                           request {job.design_request_id.slice(0, 8)}…
                         </p>
                         {job.error_message ? (
-                          <p className="mt-1 max-w-md text-xs font-mono text-red-600 dark:text-red-400">
-                            {job.error_message}
-                          </p>
+                          <p className="mt-1 max-w-md font-mono text-xs text-danger">{job.error_message}</p>
                         ) : null}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-xs text-slate-500 dark:text-slate-400">
+                      <td className="whitespace-nowrap px-5 py-3 text-xs text-muted-foreground">
                         {formatDateTime(job.created_at)}
-                        {job.started_at ? <p className="mt-0.5 text-[10px] text-slate-400">Started {formatDateTime(job.started_at)}</p> : null}
+                        {job.started_at ? (
+                          <p className="mt-0.5 text-[10px] text-muted-foreground/70">Started {formatDateTime(job.started_at)}</p>
+                        ) : null}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                      <td className="whitespace-nowrap px-5 py-3 text-xs tabular-nums text-muted-foreground">
                         {formatDuration(job.generation_time_ms ?? undefined)}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                      <td className="whitespace-nowrap px-5 py-3 text-xs tabular-nums text-muted-foreground">
                         {job.retry_count} / {job.max_retries}
                       </td>
                       <td className="px-5 py-3"><DesignJobBadge status={job.status} /></td>

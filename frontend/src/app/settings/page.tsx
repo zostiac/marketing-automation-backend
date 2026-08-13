@@ -1,3 +1,4 @@
+import { Palette, Plug, Puzzle, Radio, School } from 'lucide-react';
 import { ConnectionBanner } from '@/components/connection-banner';
 import { Badge, Card, CardHeader, EmptyState } from '@/components/ui';
 import {
@@ -30,11 +31,11 @@ function ObjectRows({ value }: { value?: Record<string, unknown> | null }) {
   if (!rows.length) return <EmptyState message="Not configured." />;
 
   return (
-    <dl className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+    <dl className="divide-y divide-border text-sm">
       {rows.map(([key, item]) => (
         <div key={key} className="flex items-start justify-between gap-4 px-5 py-3">
-          <dt className="text-slate-500 dark:text-slate-400">{key.replaceAll('_', ' ')}</dt>
-          <dd className="max-w-[65%] break-words text-right text-xs text-slate-900 dark:text-slate-100">
+          <dt className="text-muted-foreground">{key.replaceAll('_', ' ')}</dt>
+          <dd className="max-w-[65%] break-words text-right text-xs text-foreground">
             {typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
               ? String(item)
               : JSON.stringify(item)}
@@ -60,8 +61,8 @@ export default async function SettingsPage() {
   return (
     <>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Settings</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <h2 className="text-xl font-semibold text-foreground">Settings</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Express connection diagnostics and school fields returned by the profile APIs.
         </p>
       </div>
@@ -69,7 +70,7 @@ export default async function SettingsPage() {
       <Card className="mb-6">
         <CardHeader
           title="Backend Connection"
-          icon={<span aria-hidden>🔌</span>}
+          icon={<Plug className="h-4 w-4" />}
           description="Live probe of the backend's GET /health route"
           action={
             <Badge tone={health.reachable ? 'green' : 'red'}>
@@ -77,35 +78,35 @@ export default async function SettingsPage() {
             </Badge>
           }
         />
-        <dl className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+        <dl className="divide-y divide-border text-sm">
           <div className="flex justify-between gap-4 px-5 py-3">
-            <dt className="text-slate-500 dark:text-slate-400">API URL</dt>
-            <dd className="truncate font-mono text-xs text-slate-900 dark:text-slate-100">
+            <dt className="text-muted-foreground">API URL</dt>
+            <dd className="truncate font-mono text-xs text-foreground">
               {apiConfigured ? maskUrl(health.url) : 'not set'}
             </dd>
           </div>
           <div className="flex justify-between gap-4 px-5 py-3">
-            <dt className="text-slate-500 dark:text-slate-400">School ID</dt>
-            <dd className="truncate font-mono text-xs text-slate-900 dark:text-slate-100" title={configuredSchoolId()}>
+            <dt className="text-muted-foreground">School ID</dt>
+            <dd className="truncate font-mono text-xs text-foreground" title={configuredSchoolId()}>
               {schoolConfigured ? configuredSchoolId() : 'not set'}
             </dd>
           </div>
           <div className="flex justify-between gap-4 px-5 py-3">
-            <dt className="text-slate-500 dark:text-slate-400">HTTP / service status</dt>
-            <dd className="font-mono text-xs text-slate-900 dark:text-slate-100">
+            <dt className="text-muted-foreground">HTTP / service status</dt>
+            <dd className="font-mono text-xs text-foreground">
               {health.status ?? '—'} / {healthStatus(health.body)}
             </dd>
           </div>
           <div className="flex justify-between gap-4 px-5 py-3">
-            <dt className="text-slate-500 dark:text-slate-400">Latency</dt>
-            <dd className="font-mono text-xs tabular-nums text-slate-900 dark:text-slate-100">
+            <dt className="text-muted-foreground">Latency</dt>
+            <dd className="font-mono text-xs tabular-nums text-foreground">
               {health.latencyMs !== undefined ? `${health.latencyMs}ms` : '—'}
             </dd>
           </div>
           {health.error ? (
             <div className="px-5 py-3">
-              <dt className="mb-1 text-slate-500 dark:text-slate-400">Error</dt>
-              <dd className="rounded bg-red-50 px-2 py-1.5 font-mono text-[11px] text-red-700 dark:bg-red-950 dark:text-red-300">
+              <dt className="mb-1 text-muted-foreground">Error</dt>
+              <dd className="rounded-md bg-danger-muted px-2 py-1.5 font-mono text-[11px] text-danger">
                 {health.error}
               </dd>
             </div>
@@ -113,11 +114,11 @@ export default async function SettingsPage() {
         </dl>
 
         {!health.reachable || !schoolConfigured ? (
-          <div className="border-t border-slate-100 bg-slate-50 px-5 py-4 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
-            <p className="mb-2 font-semibold text-slate-900 dark:text-slate-100">Frontend environment checklist</p>
+          <div className="border-t border-border bg-muted/50 px-5 py-4 text-xs leading-relaxed text-muted-foreground">
+            <p className="mb-2 font-semibold text-foreground">Frontend environment checklist</p>
             <ol className="list-inside list-decimal space-y-1">
-              <li>Set <code className="rounded bg-slate-200 px-1 font-mono dark:bg-slate-700">API_URL</code> to the backend base URL (without <code>/api</code>).</li>
-              <li>Set <code className="rounded bg-slate-200 px-1 font-mono dark:bg-slate-700">SCHOOL_ID</code> to an existing schools.id UUID.</li>
+              <li>Set <code className="rounded bg-muted px-1 font-mono">API_URL</code> to the backend base URL (without <code>/api</code>).</li>
+              <li>Set <code className="rounded bg-muted px-1 font-mono">SCHOOL_ID</code> to an existing schools.id UUID.</li>
               <li>Redeploy after changing environment variables.</li>
             </ol>
           </div>
@@ -136,29 +137,29 @@ export default async function SettingsPage() {
         <Card>
           <CardHeader
             title="School Profile"
-            icon={<span aria-hidden>🏫</span>}
+            icon={<School className="h-4 w-4" />}
             description="GET /api/school/profile/:id"
           />
-          <dl className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+          <dl className="divide-y divide-border text-sm">
             <div className="flex justify-between gap-4 px-5 py-3">
-              <dt className="text-slate-500 dark:text-slate-400">Name</dt>
-              <dd className="text-right text-slate-900 dark:text-slate-100">{profile.data.name}</dd>
+              <dt className="text-muted-foreground">Name</dt>
+              <dd className="text-right text-foreground">{profile.data.name}</dd>
             </div>
             <div className="flex justify-between gap-4 px-5 py-3">
-              <dt className="text-slate-500 dark:text-slate-400">Tagline</dt>
-              <dd className="text-right text-slate-900 dark:text-slate-100">{profile.data.tagline || '—'}</dd>
+              <dt className="text-muted-foreground">Tagline</dt>
+              <dd className="text-right text-foreground">{profile.data.tagline || '—'}</dd>
             </div>
             <div className="flex justify-between gap-4 px-5 py-3">
-              <dt className="text-slate-500 dark:text-slate-400">Location</dt>
-              <dd className="text-right text-slate-900 dark:text-slate-100">{profile.data.location || '—'}</dd>
+              <dt className="text-muted-foreground">Location</dt>
+              <dd className="text-right text-foreground">{profile.data.location || '—'}</dd>
             </div>
             <div className="flex justify-between gap-4 px-5 py-3">
-              <dt className="text-slate-500 dark:text-slate-400">Visual style</dt>
-              <dd className="text-right text-slate-900 dark:text-slate-100">{profile.data.visual_style || '—'}</dd>
+              <dt className="text-muted-foreground">Visual style</dt>
+              <dd className="text-right text-foreground">{profile.data.visual_style || '—'}</dd>
             </div>
             <div className="flex justify-between gap-4 px-5 py-3">
-              <dt className="text-slate-500 dark:text-slate-400">Updated</dt>
-              <dd className="text-right text-xs text-slate-900 dark:text-slate-100">{formatDateTime(profile.data.updated_at)}</dd>
+              <dt className="text-muted-foreground">Updated</dt>
+              <dd className="text-right text-xs text-foreground">{formatDateTime(profile.data.updated_at)}</dd>
             </div>
           </dl>
         </Card>
@@ -166,7 +167,7 @@ export default async function SettingsPage() {
         <Card>
           <CardHeader
             title="Branding"
-            icon={<span aria-hidden>🎨</span>}
+            icon={<Palette className="h-4 w-4" />}
             description="GET /api/school/branding/:id"
           />
           <div className="space-y-4 p-5">
@@ -174,24 +175,24 @@ export default async function SettingsPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={branding.data.logo_url} alt={`${branding.data.name} logo`} className="max-h-24 max-w-48 object-contain" />
             ) : (
-              <p className="text-xs text-slate-400">No official logo URL configured.</p>
+              <p className="text-xs text-muted-foreground">No official logo URL configured.</p>
             )}
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Brand colours</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Brand colours</p>
               {colors.length ? (
                 <div className="mt-2 flex flex-wrap gap-3">
                   {colors.map(([name, color]) => (
-                    <div key={name} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                      <span className="h-6 w-6 rounded border border-slate-300 dark:border-slate-600" style={{ backgroundColor: color }} />
-                      <span>{name}: <code>{color}</code></span>
+                    <div key={name} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="h-6 w-6 rounded border border-border" style={{ backgroundColor: color }} />
+                      <span>{name}: <code className="text-foreground">{color}</code></span>
                     </div>
                   ))}
                 </div>
-              ) : <p className="mt-1 text-xs text-slate-400">Not configured.</p>}
+              ) : <p className="mt-1 text-xs text-muted-foreground">Not configured.</p>}
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Typography</p>
-              <pre className="mt-2 overflow-x-auto rounded bg-slate-50 p-3 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Typography</p>
+              <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 text-[11px] text-muted-foreground">
                 {JSON.stringify(branding.data.typography ?? {}, null, 2)}
               </pre>
             </div>
@@ -199,14 +200,14 @@ export default async function SettingsPage() {
         </Card>
 
         <Card>
-          <CardHeader title="Design Preferences" icon={<span aria-hidden>🧩</span>} />
+          <CardHeader title="Design Preferences" icon={<Puzzle className="h-4 w-4" />} />
           <ObjectRows value={profile.data.design_preferences} />
         </Card>
 
         <Card>
           <CardHeader
             title="Social Media Information"
-            icon={<span aria-hidden>📡</span>}
+            icon={<Radio className="h-4 w-4" />}
             description="Profile metadata only; the backend has no channel-status GET endpoint"
           />
           <ObjectRows value={profile.data.social_media_info} />

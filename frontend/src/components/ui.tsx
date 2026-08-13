@@ -11,7 +11,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 ${className}`}
+      className={`rounded-lg border border-border bg-card text-card-foreground shadow-sm ${className}`}
     >
       {children}
     </div>
@@ -30,14 +30,14 @@ export function CardHeader({
   description?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+    <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-          {icon}
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          {icon ? <span className="text-muted-foreground">{icon}</span> : null}
           {title}
         </h2>
         {description ? (
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{description}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
         ) : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
@@ -50,12 +50,12 @@ export function CardHeader({
 export type BadgeTone = 'neutral' | 'blue' | 'green' | 'amber' | 'red' | 'violet';
 
 const TONES: Record<BadgeTone, string> = {
-  neutral: 'bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700',
-  blue: 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-900',
-  green: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-900',
-  amber: 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-900',
-  red: 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-900',
-  violet: 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:ring-violet-900',
+  neutral: 'bg-muted text-muted-foreground ring-border',
+  blue: 'bg-info-muted text-info ring-info/20',
+  green: 'bg-success-muted text-success ring-success/20',
+  amber: 'bg-warning-muted text-warning ring-warning/20',
+  red: 'bg-danger-muted text-danger ring-danger/20',
+  violet: 'bg-violet-muted text-violet ring-violet/20',
 };
 
 export function Badge({
@@ -92,15 +92,13 @@ export function Button({
   title?: string;
 }) {
   const base =
-    'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900';
+    'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
   const sizes = { sm: 'px-2.5 py-1.5 text-xs', md: 'px-3.5 py-2 text-sm' };
   const variants = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700',
-    secondary:
-      'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
-    ghost: 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
-    danger:
-      'border border-red-300 bg-white text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-slate-800 dark:text-red-300 dark:hover:bg-red-950',
+    primary: 'bg-primary text-primary-foreground hover:opacity-90',
+    secondary: 'border border-border bg-card text-foreground hover:bg-muted',
+    ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
+    danger: 'border border-danger/30 bg-danger-muted text-danger hover:bg-danger/10',
   };
   return (
     <button
@@ -118,9 +116,9 @@ export function Button({
 
 export function EmptyState({ message, hint }: { message: string; hint?: string }) {
   return (
-    <div className="px-5 py-10 text-center">
-      <p className="text-sm text-slate-500 dark:text-slate-400">{message}</p>
-      {hint ? <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{hint}</p> : null}
+    <div className="px-5 py-12 text-center">
+      <p className="text-sm text-muted-foreground">{message}</p>
+      {hint ? <p className="mt-1 text-xs text-muted-foreground/70">{hint}</p> : null}
     </div>
   );
 }
@@ -132,29 +130,48 @@ export function StatTile({
   value,
   sublabel,
   tone = 'neutral',
+  icon,
 }: {
   label: string;
   value: string | number;
   sublabel?: string;
   tone?: BadgeTone;
+  icon?: ReactNode;
 }) {
   const accent: Record<BadgeTone, string> = {
-    neutral: 'text-slate-900 dark:text-slate-100',
-    blue: 'text-blue-600 dark:text-blue-400',
-    green: 'text-emerald-600 dark:text-emerald-400',
-    amber: 'text-amber-600 dark:text-amber-400',
-    red: 'text-red-600 dark:text-red-400',
-    violet: 'text-violet-600 dark:text-violet-400',
+    neutral: 'text-foreground',
+    blue: 'text-info',
+    green: 'text-success',
+    amber: 'text-warning',
+    red: 'text-danger',
+    violet: 'text-violet',
+  };
+  const iconWrap: Record<BadgeTone, string> = {
+    neutral: 'bg-muted text-muted-foreground',
+    blue: 'bg-info-muted text-info',
+    green: 'bg-success-muted text-success',
+    amber: 'bg-warning-muted text-warning',
+    red: 'bg-danger-muted text-danger',
+    violet: 'bg-violet-muted text-violet',
   };
   return (
     <Card className="px-5 py-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-        {label}
-      </p>
-      <p className={`mt-1 text-2xl font-semibold tabular-nums ${accent[tone]}`}>{value}</p>
-      {sublabel ? (
-        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{sublabel}</p>
-      ) : null}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          <p className={`mt-1.5 text-2xl font-semibold tabular-nums ${accent[tone]}`}>{value}</p>
+          {sublabel ? (
+            <p className="mt-0.5 text-xs text-muted-foreground">{sublabel}</p>
+          ) : null}
+        </div>
+        {icon ? (
+          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconWrap[tone]}`}>
+            {icon}
+          </span>
+        ) : null}
+      </div>
     </Card>
   );
 }
