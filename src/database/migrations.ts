@@ -218,13 +218,13 @@ export async function runMigrations() {
       const amarSchool = {
         name: 'Amar English School',
         tagline: 'Education is the Light of Life',
-        location: 'Devchuli-16, Rajahar, Nawalparasi',
+        location: 'Devchuli-16, Rajahar, Nepal',
         official_logo_url: 'assets/logo.png',
         brand_colors: JSON.stringify({ primary: '#0B4F8C', secondary: '#F2C94C', accent: '#FFFFFF' }),
         typography: JSON.stringify({ heading: 'Modern Sans', body: 'Elegant Devanagari' }),
         visual_style: 'modern, minimal, editorial, premium',
         logo_protection_rules: JSON.stringify({ preserve_original: true, allow_reposition: true, allow_resize: true, allow_rotation: false, minimum_padding: 48, priority: 'high', blend_with_design: true, avoid_busy_background: true }),
-        design_preferences: JSON.stringify({ tone: 'professional, premium, modern and school-appropriate', imagery: 'occasion-appropriate custom illustrations, students, school environment and relevant cultural/educational visuals', composition: 'dynamic, strong visual hierarchy, balanced whitespace, asymmetrical where appropriate', visual_reference: 'Awwwards', avoid: 'generic AI style, clipart, excessive 3D, photorealism unless told to' }),
+        design_preferences: JSON.stringify({ tone: 'professional, premium, modern and school-appropriate', imagery: 'occasion-appropriate custom illustrations, students, school environment and relevant cultural/educational visuals', composition: 'dynamic, strong visual hierarchy, balanced whitespace, asymmetrical where appropriate', visual_reference: 'Awwwards', avoid: 'generic AI style, clipart, excessive 3D, photorealism' }),
         social_media_info: JSON.stringify({ facebook: 'https://www.facebook.com/amarrajahar16', tiktok: 'https://www.tiktok.com/@amarenglishschool?lang=en', instagram: 'https://www.instagram.com/amarrajahar/', youtube: 'https://www.youtube.com/@amarrajahar', website: null }),
       };
       const existing = await db.query('SELECT id FROM schools WHERE name = $1 LIMIT 1', [amarSchool.name]);

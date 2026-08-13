@@ -1,6 +1,6 @@
 # Marketing Automation Backend
 
-AI-powered school marketing automation for **Amar English School** (Devchuli-16, Rajahar, Nawalparasi). The Express API generates occasion-aware social designs, keeps a Nepal/Bikram Sambat content calendar, and can publish approved assets to Facebook, Instagram, and TikTok.
+AI-powered school marketing automation for **Amar English School** (Devchuli-16, Rajahar, Nepal). The Express API generates occasion-aware social designs, keeps a Nepal/Bikram Sambat content calendar, and can publish approved assets to Facebook, Instagram, and TikTok.
 
 A Next.js control panel lives in [`frontend/`](frontend/README.md).
 

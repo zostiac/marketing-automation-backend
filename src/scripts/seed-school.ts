@@ -15,7 +15,7 @@ import { SchoolService } from '../services/SchoolService';
 export const amarEnglishSchool = {
   name: 'Amar English School',
   tagline: 'Education is the Light of Life',
-  location: 'Devchuli-16, Rajahar, Nawalparasi',
+  location: 'Devchuli-16, Rajahar, Nepal',
   official_logo_url: 'assets/logo.png',
   brand_colors: {
     primary: '#0B4F8C',
@@ -42,7 +42,7 @@ export const amarEnglishSchool = {
     imagery: 'occasion-appropriate custom illustrations, students, school environment and relevant cultural/educational visuals',
     composition: 'dynamic, strong visual hierarchy, balanced whitespace, asymmetrical where appropriate',
     visual_reference: 'Awwwards',
-    avoid: 'generic AI style, clipart, excessive 3D, photorealism unless told to',
+    avoid: 'generic AI style, clipart, excessive 3D, photorealism',
   },
   social_media_info: {
     facebook: 'https://www.facebook.com/amarrajahar16',
