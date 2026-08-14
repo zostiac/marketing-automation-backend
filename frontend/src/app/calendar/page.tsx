@@ -6,9 +6,9 @@ import {
   SyncFestivalsButton,
 } from '@/components/calendar-actions';
 import { ConnectionBanner } from '@/components/connection-banner';
-import { RequestDesignButton } from '@/components/job-actions';
+import { DesignOptions } from '@/components/design-options';
 import { CalendarBadge } from '@/components/status';
-import { Badge, Button, Card, CardHeader, EmptyState } from '@/components/ui';
+import { Badge, Card, CardHeader, EmptyState } from '@/components/ui';
 import { isApiConfigured, isSchoolConfigured } from '@/lib/api';
 import { getCalendar, getFestivals, getToday } from '@/lib/data';
 import { formatDate, relativeDays } from '@/lib/format';
@@ -175,13 +175,27 @@ export default async function CalendarPage({
                   <div className="flex shrink-0 flex-col items-end gap-2">
                     {calendar.live ? (
                       <>
-                        <RequestDesignButton eventId={entry.event_id} />
+                        <DesignOptions
+                          eventId={entry.event_id}
+                          eventName={entry.name || `Event ${entry.event_id.slice(0, 8)}`}
+                          description={entry.description}
+                          eventType={entry.event_type}
+                          eventDate={entry.event_date}
+                          platforms={entry.platforms}
+                          canGenerate={calendar.live}
+                        />
                         {entry.status === 'scheduled' ? <PublishEntryButton entryId={entry.id} /> : null}
                       </>
                     ) : (
-                      <Button variant="primary" disabled title="Connect the live backend first">
-                        Generate design
-                      </Button>
+                      <DesignOptions
+                        eventId={entry.event_id}
+                        eventName={entry.name || `Event ${entry.event_id.slice(0, 8)}`}
+                        description={entry.description}
+                        eventType={entry.event_type}
+                        eventDate={entry.event_date}
+                        platforms={entry.platforms}
+                        canGenerate={false}
+                      />
                     )}
                   </div>
                 </div>
