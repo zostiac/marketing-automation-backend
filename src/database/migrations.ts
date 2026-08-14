@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS creative_directions (
   background TEXT,
   logo_integration TEXT,
   mood VARCHAR(100),
+  dos JSONB,
+  donts JSONB,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -198,6 +200,8 @@ export async function runMigrations() {
       `ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS publish_results JSONB`,
       `ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS publish_error TEXT`,
       `ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS publish_attempts INTEGER DEFAULT 0`,
+      `ALTER TABLE creative_directions ADD COLUMN IF NOT EXISTS dos JSONB`,
+      `ALTER TABLE creative_directions ADD COLUMN IF NOT EXISTS donts JSONB`,
       `DROP INDEX IF EXISTS idx_content_calendar_school_date`,
       `DROP INDEX IF EXISTS idx_content_calendar_event_id`,
       `CREATE INDEX IF NOT EXISTS idx_content_calendar_school_id ON content_calendar(school_id)`,

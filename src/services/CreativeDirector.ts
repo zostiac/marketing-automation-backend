@@ -22,23 +22,43 @@ export interface CreativeDirectionOutput {
   background: string;
   logo_integration: string;
   mood: string;
+  dos: string[];
+  donts: string[];
 }
 
 export class CreativeDirector {
   static async generateCreativeDirection(input: CreativeDirectionInput): Promise<CreativeDirectionOutput> {
-    const prompt = `Generate professional creative direction for a ${input.design_type} marketing design.
-    
+    const prompt = `You are the best, most famous, and highest-paid graphic designer in the world — a world-class brand designer and art director working for ${input.school.name}.
+
+Generate a professional, publication-ready creative direction for a ${input.design_type} marketing design.
+
 School: ${input.school.name}
 Event: ${input.event.name}
 Description: ${input.event.description}
 Event Type: ${input.event.event_type}
+Target Audience: ${input.audience || 'students, parents, educators'}
+Placement: ${input.platform || 'social media and print'}
 
 School Branding:
 - Colors: ${JSON.stringify(input.school.brand_colors)}
 - Typography: ${JSON.stringify(input.school.typography)}
 - Visual Style: ${input.school.visual_style}
 
-Create unique, professional creative direction. Return ONLY valid JSON:
+Account memory (previously mentioned preferences and instructions — use these):
+- Design Preferences: ${JSON.stringify(input.school.design_preferences)}
+- Logo Protection Rules: ${JSON.stringify(input.school.logo_protection_rules)}
+- Event Custom Instructions: ${input.event.custom_instructions || 'none'}
+- Event Design Requirement: ${input.event.design_requirement || 'none'}
+
+Requirements:
+1. Create a unique, professional creative direction covering every field below.
+2. Use any previously mentioned or stored preferences, brand notes, and instructions above as memory — apply them to this design. If nothing relevant was mentioned, use your world-class professional judgment.
+3. In addition to the core direction, produce two explicit lists of instructions:
+   - "dos": positive instructions — exactly what the design MUST do (e.g. color usage, hierarchy, logo handling, content accuracy).
+   - "donts": negative instructions — exactly what the design MUST NOT do (e.g. avoid clashing colors, avoid distorting the logo, avoid clutter, avoid off-brand imagery).
+4. The logo must be treated as sacred brand identity: preserve its exact shape, proportions, colors, and detail.
+
+Return ONLY valid JSON with no markdown, in this exact shape:
 {
   "concept": "core idea",
   "composition": "visual arrangement",
@@ -50,7 +70,9 @@ Create unique, professional creative direction. Return ONLY valid JSON:
   "illustration_style": "artistic approach",
   "background": "background treatment",
   "logo_integration": "how to integrate the school logo prominently and preserve it exactly",
-  "mood": "emotional tone"
+  "mood": "emotional tone",
+  "dos": ["positive instruction 1", "positive instruction 2"],
+  "donts": ["negative instruction 1", "negative instruction 2"]
 }`;
 
     const response = await openai.chat.completions.create({
@@ -65,7 +87,12 @@ Create unique, professional creative direction. Return ONLY valid JSON:
 
     const content = response.choices[0].message.content;
     if (!content) throw new Error('No response from OpenAI');
-    
-    return JSON.parse(content);
+
+    const parsed = JSON.parse(content);
+    return {
+      ...parsed,
+      dos: Array.isArray(parsed.dos) ? parsed.dos : [],
+      donts: Array.isArray(parsed.donts) ? parsed.donts : [],
+    };
   }
 }

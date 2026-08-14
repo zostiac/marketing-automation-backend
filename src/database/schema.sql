@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS creative_directions (
   background TEXT,
   logo_integration TEXT,
   mood VARCHAR(100),
+  dos JSONB,
+  donts JSONB,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
