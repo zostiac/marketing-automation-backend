@@ -2,6 +2,17 @@
 
 import { revalidatePath } from 'next/cache';
 import { apiFetch, configuredSchoolId } from '@/lib/api';
+import { getBranding } from '@/lib/data';
+import {
+  buildPrompt,
+  type PromptState,
+  isPromptFormat,
+  isPromptTarget,
+  isPromptTone,
+  type PromptFormat,
+  type PromptTarget,
+  type PromptTone,
+} from '@/lib/prompt';
 
 export interface ActionState {
   status: 'idle' | 'success' | 'error';
@@ -185,4 +196,55 @@ export async function syncFestivalsAction(
   } catch (error) {
     return { status: 'error', message: errorMessage(error) };
   }
+}
+
+/* --------------------------------------------------------------- Prompts ---- */
+
+export async function generatePromptAction(
+  previous: PromptState,
+  formData: FormData,
+): Promise<PromptState> {
+  const eventName = String(formData.get('event_name') ?? '').trim();
+  if (!eventName) {
+    return { ...previous, status: 'error', message: 'Pick an event or type an event name first' };
+  }
+
+  const rawTarget = String(formData.get('target') ?? 'chatgpt');
+  const rawFormat = String(formData.get('format') ?? 'landscape');
+  const rawTone = String(formData.get('tone') ?? 'celebratory');
+  const target: PromptTarget = isPromptTarget(rawTarget) ? rawTarget : 'chatgpt';
+  const format: PromptFormat = isPromptFormat(rawFormat) ? rawFormat : 'landscape';
+  const tone: PromptTone = isPromptTone(rawTone) ? rawTone : 'celebratory';
+
+  const platforms = String(formData.get('platforms') ?? '')
+    .split(',')
+    .map((platform) => platform.trim())
+    .filter(Boolean);
+
+  // Branding is optional: a prompt is still useful when the school row is missing.
+  const branding = await getBranding();
+  const variant = (previous.variant ?? 0) + 1;
+
+  const prompt = buildPrompt({
+    eventName,
+    eventType: String(formData.get('event_type') ?? '') || null,
+    eventDate: String(formData.get('event_date') ?? '') || null,
+    description: String(formData.get('description') ?? '') || null,
+    platforms,
+    notes: String(formData.get('notes') ?? '') || null,
+    target,
+    format,
+    tone,
+    variant,
+    branding: branding.live ? branding.data : null,
+  });
+
+  return {
+    status: 'success',
+    message: variant > 1 ? `Regenerated (variation ${variant})` : 'Prompt generated',
+    prompt,
+    variant,
+    target,
+    eventName,
+  };
 }
