@@ -39,6 +39,12 @@ CREATIVE DIRECTION:
 - Logo Integration: ${creativeDirection.logo_integration}
 - Mood: ${creativeDirection.mood}
 
+DO (positive instructions — must follow):
+${(creativeDirection.dos || []).map((d) => `- ${d}`).join('\n')}
+
+DON'T (negative instructions — must avoid):
+${(creativeDirection.donts || []).map((d) => `- ${d}`).join('\n')}
+
 Include text: "${school.name}" and "${event.name}"
 Quality: High-resolution, publication-ready
 Design principles: Professional, balanced, clear hierarchy`;

@@ -35,9 +35,9 @@ export class JobProcessor {
 
       // Store creative direction
       const directionResult = await db.query(
-        `INSERT INTO creative_directions (design_request_id, concept, composition, layout, visual_hierarchy, typography, color_usage, imagery, illustration_style, background, logo_integration, mood)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
-        [designRequestId, creativeDirection.concept, creativeDirection.composition, creativeDirection.layout, creativeDirection.visual_hierarchy, creativeDirection.typography, creativeDirection.color_usage, creativeDirection.imagery, creativeDirection.illustration_style, creativeDirection.background, creativeDirection.logo_integration, creativeDirection.mood]
+        `INSERT INTO creative_directions (design_request_id, concept, composition, layout, visual_hierarchy, typography, color_usage, imagery, illustration_style, background, logo_integration, mood, dos, donts)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb) RETURNING id`,
+        [designRequestId, creativeDirection.concept, creativeDirection.composition, creativeDirection.layout, creativeDirection.visual_hierarchy, creativeDirection.typography, creativeDirection.color_usage, creativeDirection.imagery, creativeDirection.illustration_style, creativeDirection.background, creativeDirection.logo_integration, creativeDirection.mood, JSON.stringify(creativeDirection.dos || []), JSON.stringify(creativeDirection.donts || [])]
       );
 
       // Build design prompt

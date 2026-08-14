@@ -53,6 +53,8 @@ export interface CreativeDirection {
   background: string;
   logo_integration: string;
   mood: string;
+  dos?: string[];
+  donts?: string[];
   created_at: Date;
 }
 
