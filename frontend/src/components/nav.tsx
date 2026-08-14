@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Palette,
   Settings,
+  Wand2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -15,6 +16,7 @@ const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/designs', label: 'Design jobs', icon: Palette },
+  { href: '/prompts', label: 'Prompts', icon: Wand2 },
   { href: '/history', label: 'Job history', icon: History },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
